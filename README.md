@@ -1,5 +1,5 @@
 # Fake-data
-This repo to be used to generate fake datasets for all kind of purposes
+Use this repo to be used to generate fake datasets for all kind of purposes within Epicentre (training, interviews, case-study ect...)
 
 ## Moïssala Measles Outbreak
 
