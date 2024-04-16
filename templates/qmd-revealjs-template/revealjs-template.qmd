@@ -1,0 +1,182 @@
+---
+title: qmd-pptx-template
+subtitle: Here is the subtitle
+author: Author 1 Author 2
+institute: EpiDS - Epicentre, Paris
+date: last-modified
+date-format: long
+footer: this is the global footer
+format: 
+  revealjs:
+    theme: css/epicentre_revealjs_style.scss
+    logo: img/epicentre_logo.png
+    incremental: false
+    slide-number: c/t
+    overview: true
+    progress: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+
+library(fs)         # work with path
+library(here)       # create relative paths
+library(rio)        # import files
+library(janitor)    # data cleaning
+library(lubridate)  # date handling
+library(tidyverse)  # data science 
+
+```
+
+# Revealjs basics
+
+## Incremental list
+
+This list of item is not incremental 
+
+- list 1 
+- list 2
+- list 3
+
+change to `incremental: true` in the `YAML` to turn it off or use 
+
+```{r, eval = FALSE} 
+
+::: {.incremental}
+- item 1
+- item 2
+- item 3
+:::
+  
+```
+
+## Slides with pause 
+
+You can add pauses 
+
+. . .
+
+using `. . .` surrounded with empty lines
+
+
+## Multiple columns
+
+:::: {.columns}
+
+::: {.column width="40%"}
+There can be content ... 
+:::
+
+::: {.column width="60%"}
+... split in different columns 
+:::
+
+::::
+
+## Slide Title {.scrollable}
+
+`{.scrollable}` will make the slide scrollable if it has a lot of content 
+
+- 1
+- 2
+- 3
+- 4
+- 5
+- 6
+- 7
+- 8
+- 9
+- 10
+
+## Slide Title {.smaller}
+
+`{.smaller}` will make the slide content smaller 
+
+
+## Speakers notes 
+
+You can add speaker notes with
+
+```{r, eval = FALSE, echo = TRUE}
+
+::: {.notes}
+Speaker notes go here.
+:::
+  
+```
+
+and press `S` to go in speaker view 
+
+::: {.notes}
+Speaker notes go here.
+:::
+
+## Asides & Footnotes 
+
+- item 1
+- item 2
+- item 3 ^[A footnote]
+
+You sill notice the EPICENTRE logo shared across the slides. this is set in the `YAML`
+
+::: aside
+And there is also asides notes like this one 
+:::
+
+## Footer and logo 
+
+There is a global footer assigned in the `YAML` that is shared across slides. You can also include a custom one 
+
+::: footer
+Like this one 
+:::
+
+# Code blocks
+
+## Code chunks
+By default are chunks are `echo` but not executed. Use the chunks option to modify this. 
+
+- They are written as `#|` above source code.
+- You can also change the location of the source code output
+
+```{r}
+#| echo: fenced
+#| fig-cap: "This is the caption of this figure"
+#| eval: true
+#| output-location: column
+
+ggplot(data = iris, aes(y = Petal.Length, 
+                        x = Petal.Width, 
+                        col = Species)) +
+  
+  geom_point()
+
+```
+
+## Figure size {.smaller}
+
+It will have to be manually set using `width` and `height` chunks options for `R` (`knitr`) output
+
+```{r}
+#| eval: true
+head(iris) %>% knitr::kable()
+```
+
+
+## Tabsets 
+
+:::{.important}
+You can create different tabs in a slide and highligth stuff with a call out `{.important}`
+:::
+
+::: {.panel-tabset}
+
+### Tab A
+
+Content for `Tab A`
+
+### Tab B
+
+Content for `Tab B`
+
+:::

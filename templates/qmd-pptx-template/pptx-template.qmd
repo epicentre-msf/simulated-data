@@ -1,0 +1,104 @@
+---
+title: qmd-pptx-template
+subtitle: Here is the subtitle
+author: Author 1, Author 2
+date: last-modified
+date-format: long
+footer: this is the global footer
+format: 
+  pptx:
+    incremental: true
+    reference-doc: pptx-template/epicentre-pptx-template.pptx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+
+library(fs)         # work with path
+library(here)       # create relative paths
+library(rio)        # import files
+library(janitor)    # data cleaning
+library(lubridate)  # date handling
+library(tidyverse)  # data science 
+
+```
+
+# Section 1 
+
+## Title and Content slide
+
+This list of item is incremental - change to `incremental: false` in the `YAML` to turn it off
+
+- list 1 
+- list 2
+- list 3
+
+## Speakers notes 
+
+You can add speaker notes with
+
+```{r, eval = FALSE, echo = TRUE}
+
+::: {.notes}
+Speaker notes go here.
+:::
+  
+```
+
+::: {.notes}
+Speaker notes go here.
+:::
+
+
+## Two Content slide
+
+:::: {.columns}
+
+::: {.column width="40%"}
+There can be content ... 
+:::
+
+::: {.column width="60%"}
+... split in different columns 
+:::
+
+::::
+
+
+# Section 2 
+
+## Comparison slide 
+
+:::: {.columns}
+
+::: {.column width="40%"}
+Text here with image/table next to it 
+:::
+
+::: {.column width="60%"}
+```{r, eval = TRUE, echo = FALSE, width = 50}
+head(iris) %>% knitr::kable()
+```
+:::
+
+::::
+
+## Content with Caption slide 
+
+There is text above a graph or a table 
+
+```{r, eval = TRUE, echo = FALSE}
+ggplot(data = iris, 
+       aes(x = Sepal.Length, y = Sepal.Width)) + 
+  geom_point()
+
+```
+
+
+--- 
+
+::: {.notes}
+Blank slide to get the final slide
+:::
+
+
