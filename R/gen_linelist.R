@@ -29,7 +29,7 @@ conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
 # read measles data
-dat_clean <- readRDS(here::here("data", "clean", "real_measles_data.rds"))
+#dat_clean <- readRDS(here::here("data", "clean", "real_measles_data.rds"))
 
 # all params and distributions
 measles_params <- readRDS(here::here("data", "clean", "measles_params.rds"))
@@ -421,17 +421,17 @@ gtsummary::tbl_regression(
 # Hospital exit -----------------------------------------------------------
 
 # randomly allocate a hospital length using a gamma 
-hosp_length <- dat_clean |>
-  filter(hospitalised_yn == "Yes") |>
-  drop_na(date_hospitalisation_end) |>
-  drop_na(date_hospitalisation_start) |>
-  select(date_hospitalisation_start, date_hospitalisation_end) |>
-  mutate(delay = as.numeric(date_hospitalisation_end - date_hospitalisation_start)) |>
-  filter(delay > 0)
-
-ggplot(data = hosp_length) +
-  geom_density(aes(x = delay), binwidth = 1) +
-  stat_function(fun = dgamma, args = list(shape = 2.2251860, rate = 0.8541434))
+# hosp_length <- dat_clean |>
+#   filter(hospitalised_yn == "Yes") |>
+#   drop_na(date_hospitalisation_end) |>
+#   drop_na(date_hospitalisation_start) |>
+#   select(date_hospitalisation_start, date_hospitalisation_end) |>
+#   mutate(delay = as.numeric(date_hospitalisation_end - date_hospitalisation_start)) |>
+#   filter(delay > 0)
+# 
+# ggplot(data = hosp_length) +
+#   geom_density(aes(x = delay), binwidth = 1) +
+#   stat_function(fun = dgamma, args = list(shape = 2.2251860, rate = 0.8541434))
 
 # allocate hospital lenght
 sim_ll <- sim_ll |>
@@ -517,13 +517,42 @@ sim_ll <- sim_ll |>
 #make some onset date NA 
 
 #random rows id to make NA
-
 rows_id <- sample(1:nrow(sim_ll), replace = FALSE, size = 300)
 
 sim_ll <- sim_ll |> 
   mutate( date_onset = case_when(row_number() %in% rows_id ~ NA, 
                                  .default = date_onset)
   ) |> select(-c(date_first_contact, date_last_contact))
+
+#order variables
+sim_ll <- sim_ll |> select(id,
+                          site,
+                          case_name,
+                          sex,
+                          age,
+                          age_unit,
+                          age_group,
+                          region,
+                          sub_prefecture, 
+                          date_onset, 
+                          hospitalisation, 
+                          date_admission, 
+                          ct_value, 
+                          malaria_rdt, 
+                          fever, 
+                          rash, 
+                          cough, 
+                          red_eye, 
+                          pneumonia, 
+                          encephalitis, 
+                          muac, 
+                          muac_cat, 
+                          vacc_status, 
+                          vacc_doses, 
+                          outcome, 
+                          date_outcome, 
+                          epi_classification
+) 
 
 export(sim_ll, here::here("data", "clean", "simulated_measles_ll.rds"))
 
