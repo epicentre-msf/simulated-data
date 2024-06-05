@@ -74,8 +74,6 @@ dat_clean <- dat |>
     )
   )
 
-export(dat_clean, here::here("data", "clean", "real_measles_data.rds"))
-
 # Define parameters -------------------------------------------------------
 
 # probability of infection upon contact
@@ -277,8 +275,6 @@ dist_hosp_length <- epiparameter::epidist(
   prob_distribution = "gamma",
   prob_distribution_params = c(shape = 2.2251860, rate = 0.8541434)
 )
-
-
 
 # list all parameters together 
 measles_params <- list("dist_infect_period" = dist_infect_period,
