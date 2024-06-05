@@ -38,15 +38,18 @@ pacman::p_load(
 )
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
+
+library(tidyverse)
+
 ```
 
 
 ```{r import data}
 # linelist
-dat_raw <- import(here::here("data", "final", "msf_linelist_moissala_2023-09-24.xlsx"))
+dat_raw <- import(here::here("data", "final", "msf_linelist_moissala_2023-06-11.xlsx")) |> as.tibble()
 
 # lab data
-lab_raw <- import(here::here("data", "final", "msf_laboratory_moissala_2023-09-24.xlsx"))
+lab_raw <- import(here::here("data", "final", "msf_laboratory_moissala_2023-06-11.xlsx"))
 
 # admin data
 admin_1 <- st_read(here::here("data", "gpkg", "GEO-EXPORT-TCD-2024-04-11.gpkg"), layer = "ADM1")
@@ -86,8 +89,10 @@ MUAC is classified as follow:
 
 ```{r data cleaning}
 dat <- dat_raw |>
+  
   # standardise variable names
   janitor::clean_names() |>
+  
   # manually rename
   rename(
     id = epi_id_number,
@@ -96,8 +101,7 @@ dat <- dat_raw |>
     date_onset = date_of_onset_of_symptoms,
     hospitalisation = hospitalisation_yes_no,
     date_admission = date_of_admission_in_structure,
-    date_death = death_date,
-    date_exit = date_exit_of_structure,
+    date_outcome = death_outcome_death_recovered_lama,
     sub_prefecture = sub_prefecture_of_residence,
     region = region_of_residence,
     fever = participant_had_fever,
@@ -113,6 +117,7 @@ dat <- dat_raw |>
     site = msf_site,
     malaria_rdt = malaria_rdt
   ) |>
+  
   # recoding
   mutate(
     sex = case_when(
@@ -123,6 +128,7 @@ dat <- dat_raw |>
     across(contains("date_"), ~ ymd(.x)),
     across(c(fever, rash, cough, red_eye, pneumonia, encephalitis), ~ case_match(.x, "Yes" ~ TRUE, "No" ~ FALSE, .default = NA))
   ) |>
+  
   # Categorise variables
   mutate(
     age_group = case_when(
@@ -154,7 +160,10 @@ dat <- dat_raw |>
     age_group,
     .after = age_unit
   ) |>
-  relocate(muac_cat, .after = muac)
+  relocate(muac_cat, .after = muac) |> 
+  
+  filter(date_onset >= "2022-01-01")
+
 ```
 
 # Laboratory data 
@@ -551,5 +560,5 @@ leaflet::leaflet() |>
     color = "grey",
     fillColor = ~ pal(AR),
     fillOpacity = 0.3
-  ) 
+  )
 ```

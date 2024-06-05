@@ -35,7 +35,6 @@ names(sim_clean)
 
 sim_clean |> count(encephalitis)
 
-
 sim_raw <- sim_clean |> 
   
   mutate(sex = case_when( 
@@ -55,17 +54,33 @@ sim_raw <- sim_clean |>
     ), 
     across(c(fever, rash, cough, red_eye, pneumonia, encephalitis), ~ case_match(.x, 1 ~ "Yes", 0 ~ "No")), 
     across(c(region, sub_prefecture), ~ str_to_upper(.x))
-    
   ) 
+
+#random row id
+
+rows_id <- sample(1:nrow(sim_raw), replace = FALSE, size = 50)
+rows_id_2 <- sample(1:nrow(sim_raw), replace = FALSE, size = 10)
+
+sim_raw <- sim_raw |> 
+  mutate(
+    date_admission = case_when(row_number() %in% rows_id ~ format(date_admission, "%Y-%b-%d"), 
+                           .default = as.character(date_admission)
+    ), 
+    date_onset = case_when(row_number() %in% rows_id_2 ~ date_onset - years(10), 
+                               .default = date_onset)
+  )
 
 # remove useless variables 
 sim_raw <- sim_raw |> select(-c(ct_value, 
                                 case_name, 
                                 age_group, 
                                 epi_classification, 
-                                muac_cat, 
-                                date_first_contact, 
-                                date_last_contact))
+                                muac_cat))
+
+# Keep only half of the outbreak
+sim_raw_sub <- sim_raw |> 
+  
+  filter(date_onset < "2023-06-11")
 
 # rename variables 
 sim_raw |> names()
@@ -79,8 +94,7 @@ sim_raw <- sim_raw |>
     `Date of onset of symptoms` = date_onset, 
     `Hospitalisation ("yes/no)` = hospitalisation, 
     `Date of Admission in structure` = date_admission, 
-    `Death date` = date_death, 
-    `Date exit of structure` = date_exit, 
+    `Death Outcome (death/recovered/LAMA)` = date_outcome, 
     `Sub prefecture of residence` = sub_prefecture, 
     `Region of residence` = region, 
     `Participant had fever ?` = fever, 
@@ -100,3 +114,31 @@ sim_raw <- sim_raw |>
 #export in Excel 
 export(sim_raw, here::here("data", "final", "msf_linelist_moissala_2023-09-24.xlsx"))
 
+sim_raw_sub <- sim_raw_sub |> 
+  rename(
+    `EpiID Number` = id, 
+    `Sex patient` = sex, 
+    `Age` = age, 
+    `Age Units (months/years)` = age_unit, 
+    `Date of onset of symptoms` = date_onset, 
+    `Hospitalisation ("yes/no)` = hospitalisation, 
+    `Date of Admission in structure` = date_admission, 
+    `Date Outcome` = date_outcome, 
+    `Sub prefecture of residence` = sub_prefecture, 
+    `Region of residence` = region, 
+    `Participant had fever ?` = fever, 
+    `Participant had rash ?` = rash, 
+    `Participant had cough ?` = cough, 
+    `Participant had red_eye ?` = red_eye, 
+    `Participant had pneumonia ?` = pneumonia, 
+    `Participant had encephalitis ?` = encephalitis, 
+    `Middle Upper Arm Circumference (MUAC)` = muac, 
+    `Vaccination status` = vacc_status, 
+    `Vaccination dosage` = vacc_doses, 
+    `Patient outcome (death/recovered/LAMA)` = outcome, 
+    `MSF site` = site, 
+    `Malaria RDT` = malaria_rdt
+  )
+
+#export in Excel 
+export(sim_raw_sub, here::here("data", "final", "msf_linelist_moissala_2023-06-11.xlsx"))

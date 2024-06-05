@@ -103,10 +103,12 @@ sim_ll <- sim_ll |>
         "15+ years"
       )
     ),
-    
     # variable about hospitalisation
-    hospitalisation = if_else(is.na(date_admission), "no", "yes")
+    #hospitalisation = if_else(is.na(date_admission), "no", "yes"),
+    hospitalisation = sample(c(NA, "yes"), size = nrow(sim_ll), replace = TRUE, prob = c(.05, .95)),
+    
   ) |> 
+  
   relocate(c(age, age_unit, age_group), .after = "sex") |> 
   relocate(hospitalisation, .before = date_admission)
 
@@ -130,11 +132,25 @@ ggplot(data = sim_ll) +
     binwidth = 7
   )
 
+
+# Dates variable ----------------------------------------------------------
+#we will make all cases hospitalised despite the output of sim_lis
+
+sim_ll <- sim_ll |> 
+  mutate(date_admission = case_when(is.na(date_admission) ~ date_onset + sample(c(1:5, NA), 
+                                                                                size = nrow(sim_ll), 
+                                                                                replace = TRUE, 
+                                                                                prob = c(.2, .2, .2, .2, .19, .01)), 
+                                    .default = date_admission)
+  ) 
+
+
 # Add Geographic Variables -----------------------------------------------------------
 
 # import shapefiles of Chad
 adm1 <- st_read(here::here("data", "gpkg", "GEO-EXPORT-TCD-2024-04-11.gpkg"), layer = "ADM1")
 adm2 <- st_read(here::here("data", "gpkg", "GEO-EXPORT-TCD-2024-04-11.gpkg"), layer = "ADM2")
+
 # Mandoul region of outbreak
 mandoul <- filter(adm2, adm1_name == "Mandoul")
 
@@ -417,7 +433,6 @@ ggplot(data = hosp_length) +
   geom_density(aes(x = delay), binwidth = 1) +
   stat_function(fun = dgamma, args = list(shape = 2.2251860, rate = 0.8541434))
 
-
 # allocate hospital lenght
 sim_ll <- sim_ll |>
   mutate(hosp_length = if_else(
@@ -427,19 +442,18 @@ sim_ll <- sim_ll |>
   )) |>
   #fix outcome and dates
   mutate(
-    date_exit = case_when(
+    date_outcome = case_when(
       outcome & !is.na(date_death) ~ date_death,
       outcome & is.na(date_death) ~ date_admission + hosp_length,
       !outcome ~ date_admission + hosp_length,
       .default = NA
-    ),
-    date_death = if_else(outcome, date_exit, NA)
+    )
   ) |>
-  relocate(date_exit, .after = date_death) |>
   
   # add some variability to outcome
   mutate(outcome = case_when(
-    outcome ~ sample(c("dead", "left against medical advice", NA), size = nrow(sim_ll), prob = c(.85, .02, .03), replace = TRUE),
+    outcome & hospitalisation == "yes" ~ sample(c("dead", "left against medical advice", NA), size = nrow(sim_ll), prob = c(.85, .02, .03), replace = TRUE),
+    outcome & hospitalisation == "no" ~ sample(c("dead", NA), size = nrow(sim_ll), prob = c(.98, .02), replace = TRUE),
     !outcome ~ sample(c("recovered", "left against medical advice", NA), size = nrow(sim_ll), prob = c(.85, .02, .03), replace = TRUE)
   )) |>
   
@@ -462,7 +476,7 @@ sim_ll <- sim_ll |>
     )
   ) |>
   
-  select(-c(hosp_length, p_death, case_type))
+  select(-c(hosp_length, p_death, case_type, date_death))
 
 
 # Hospital data -----------------------------------------------------------
@@ -478,14 +492,14 @@ sim_ll <- sim_ll |>
     sub_prefecture == "Bekourou" ~ "Bekourou Hospital", 
     sub_prefecture == "Bouna" ~ "Bouna Hospital", 
     sub_prefecture == "Koumogo" ~ "Koumogo Hospital", 
-                          )) |> 
+  )) |> 
   relocate(site, .after = id)
 
 ggplot(data = sim_ll)+
   geom_histogram(aes(x = date_onset ))+
   facet_wrap(~ site)
 
-# RDT Malaria 
+# RDT Malaria  -----------------------------------------------------------
 
 #incidence of Malaria in Moissala 
 # 684 cases per 1000 in 2021
@@ -495,7 +509,25 @@ ggplot(data = sim_ll)+
 # prev in moissala is 684*0.0192 = 13,13 per 1000, so 1.3% 
 sim_ll <- sim_ll |> 
   
-  mutate(malaria_rdt = sample(c("positive", "negative", "inconclusive", NA), replace = TRUE, size = nrow(sim_ll), prob = c(0.013, 0.737, 0.15, 0.1) ) )
+  mutate(malaria_rdt = sample(c("positive", "negative", "inconclusive", NA),
+                              replace = TRUE, size = nrow(sim_ll), 
+                              prob = c(0.013, 0.737, 0.15, 0.1) ) )
+
+# Onset date --------------------------------------------------------------
+#make some onset date NA 
+
+#random rows id to make NA
+
+rows_id <- sample(1:nrow(sim_ll), replace = FALSE, size = 300)
+
+sim_ll <- sim_ll |> 
+  mutate( date_onset = case_when(row_number() %in% rows_id ~ NA, 
+                                 .default = date_onset)
+  ) |> select(-c(date_first_contact, date_last_contact))
 
 export(sim_ll, here::here("data", "clean", "simulated_measles_ll.rds"))
 
+# Save shapefiles as .rds -------------------------------------------------
+
+write_rds(adm1, "data/gpkg/chad_adm1.rds")
+write_rds(adm2, "data/gpkg/chad_adm2.rds")

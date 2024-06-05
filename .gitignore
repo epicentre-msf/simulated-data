@@ -50,7 +50,6 @@ po/*~
 rsconnect/
 
 # Sensitive file/folders
-data/
 temp/
 .Rprofile
 

@@ -27,7 +27,7 @@ lab <- sim_ll |>
          date_onset,
          ct_value,
          date_admission, 
-         date_exit, 
+         date_outcome, 
          sub_prefecture
   ) |> 
   
@@ -39,7 +39,7 @@ lab <- sim_ll |>
 
 lab <- lab |> 
   mutate(
-    delay_hosp = as.numeric(date_exit - date_admission ),
+    delay_hosp = as.numeric(date_outcome - date_admission ),
     delay_test = round(sample(1:delay_hosp, replace = TRUE, nrow(lab))),
     date_test = date_admission + delay_test, 
     lab_result = case_when( 
@@ -74,9 +74,10 @@ inc <- inc |>
 #bind inconclusives back 
 lab <- bind_rows(lab, inc) |> select(id, lab_id, date_test, ct_value, lab_result)
 
+lab_sub <- lab |> filter(date_test < "2023-06-11")
+
 
 # rename some variables 
-
 lab_raw <- lab |> 
   rename(
     `MSF Number ID` = id, 
@@ -88,3 +89,16 @@ lab_raw <- lab |>
 
 export(lab, here::here("data", "clean", "simulated_measles_lab_data.rds"))
 export(lab_raw, here::here("data", "final", "msf_laboratory_moissala_2023-09-24.xlsx"))
+
+
+lab_raw_sub <- lab_sub |> 
+  rename(
+    `MSF Number ID` = id, 
+    `Laboratory id` = lab_id, 
+    ` Date of the test` =  date_test,
+    `CT value` = ct_value, 
+    `Final Test Result` = lab_result
+  )
+
+export(lab_raw_sub, here::here("data", "final", "msf_laboratory_moissala_2023-06-11.xlsx"))
+
