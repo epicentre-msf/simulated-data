@@ -8,6 +8,7 @@ author: "*`r ifelse(!is.null(params$team), paste(params$team, ' - Epicentre, Par
 date: "last updated `r format(Sys.Date(), '%d %b %Y')`"
 output:
   html_document:
+    
     theme: cosmo
     toc: true
     toc_float: true
@@ -15,16 +16,20 @@ output:
     css: 'css/epicentre_rmd_style.css'
     keep_tex: false
     code_folding: hide
-    
+editor_options: 
+  chunk_output_type: console
 ---
 <script>
-  $(document).ready(function() {
-    $('#TOC').parent().prepend('<div id="nav_logo"><img src="img/epicentre_logo.png"></div>');
-  });
+$(document).ready(function() {
+$('#TOC').parent().prepend('<div id="nav_logo"><img src="img/epicentre_logo.png"></div>');
+});
 </script>
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE, 
+                      message = FALSE, 
+                      error = FALSE)
 ```
 
 ```{r libraries}
@@ -40,20 +45,26 @@ conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
 library(tidyverse)
-
 ```
 
 
 ```{r import data}
 # linelist
-dat_raw <- import(here::here("data", "final", "msf_linelist_moissala_2023-06-11.xlsx")) |> as.tibble()
+
+path_ll <- fs::dir_ls(here::here("data", "final"), 
+                      regex = "msf_linelist") |> max()
+
+dat_raw <- import(path_ll) |> as.tibble()
 
 # lab data
-lab_raw <- import(here::here("data", "final", "msf_laboratory_moissala_2023-06-11.xlsx"))
+path_lab <- fs::dir_ls(here::here("data", "final"), 
+                       regex = "msf_laboratory") |> max()
+
+lab_raw <- import(path_lab) |> as_tibble()
 
 # admin data
-admin_1 <- st_read(here::here("data", "gpkg", "GEO-EXPORT-TCD-2024-04-11.gpkg"), layer = "ADM1")
-admin_2 <- st_read(here::here("data", "gpkg", "GEO-EXPORT-TCD-2024-04-11.gpkg"), layer = "ADM2")
+admin_1 <- st_read(here::here("data", "gpkg", "GEO-EXPORT-TCD-2024-04-11.gpkg"), layer = "ADM1", quiet= TRUE)
+admin_2 <- st_read(here::here("data", "gpkg", "GEO-EXPORT-TCD-2024-04-11.gpkg"), layer = "ADM2", quiet = TRUE)
 ```
 
 ## Introduction
@@ -88,11 +99,10 @@ MUAC is classified as follow:
 `suspected`: all other cases
 
 ```{r data cleaning}
+
 dat <- dat_raw |>
-  
   # standardise variable names
   janitor::clean_names() |>
-  
   # manually rename
   rename(
     id = epi_id_number,
@@ -101,7 +111,7 @@ dat <- dat_raw |>
     date_onset = date_of_onset_of_symptoms,
     hospitalisation = hospitalisation_yes_no,
     date_admission = date_of_admission_in_structure,
-    date_outcome = death_outcome_death_recovered_lama,
+    date_outcome = date_of_outcome,
     sub_prefecture = sub_prefecture_of_residence,
     region = region_of_residence,
     fever = participant_had_fever,
@@ -113,22 +123,32 @@ dat <- dat_raw |>
     muac = middle_upper_arm_circumference_muac,
     vacc_status = vaccination_status,
     vacc_doses = vaccination_dosage,
-    outcome = patient_outcome,
+    outcome = patient_outcome_death_recovered_lama,
     site = msf_site,
     malaria_rdt = malaria_rdt
   ) |>
-  
   # recoding
   mutate(
     sex = case_when(
       sex %in% c("f", "femme") ~ "female",
       sex %in% c("m", "homme") ~ "male",
       .default = sex
-    ),
-    across(contains("date_"), ~ ymd(.x)),
-    across(c(fever, rash, cough, red_eye, pneumonia, encephalitis), ~ case_match(.x, "Yes" ~ TRUE, "No" ~ FALSE, .default = NA))
+    ), 
+    across(contains("date_"), ~ as.Date(.x)),
+    across(
+      c(
+        fever,
+        rash,
+        cough,
+        red_eye,
+        pneumonia,
+        encephalitis
+      ),
+      ~ case_match(.x, 
+                   "Yes" ~ TRUE, 
+                   "No" ~ FALSE, .default = NA)
+    )
   ) |>
-  
   # Categorise variables
   mutate(
     age_group = case_when(
@@ -162,8 +182,7 @@ dat <- dat_raw |>
   ) |>
   relocate(muac_cat, .after = muac) |> 
   
-  filter(date_onset >= "2022-01-01")
-
+  filter(date_onset >= as.Date("2023-01-01"))
 ```
 
 # Laboratory data 
@@ -242,6 +261,7 @@ dat |>
     malaria_rdt = "Malaria RDT",
     outcome = "Outcome"
   ))
+
 ```
 
 ### By sites 
@@ -283,7 +303,7 @@ dat |>
     proportional = TRUE,
     show_midpoint = TRUE
   ) +
-
+  
   theme_minimal()
 ```
 
@@ -349,7 +369,7 @@ prep_logit <- dat |>
         "Yes"
       )
     ),
-
+    
     # outcome needs to be 1/0
     outcome_binary = case_when(
       outcome == "recovered" ~ 0,
@@ -495,10 +515,10 @@ chor_dat <- left_join(
 
 ```{r leaflet map}
 leaf_basemap <- function(
-  bbox,
-  baseGroups = c("Light", "OSM", "OSM HOT"),
-  overlayGroups = c("Boundaries"),
-  miniMap = TRUE
+    bbox,
+    baseGroups = c("Light", "OSM", "OSM HOT"),
+    overlayGroups = c("Boundaries"),
+    miniMap = TRUE
 ) {
   lf <- leaflet::leaflet() %>%
     leaflet::fitBounds(bbox[["xmin"]], bbox[["ymin"]], bbox[["xmax"]], bbox[["ymax"]]) %>%
@@ -524,11 +544,11 @@ leaf_basemap <- function(
       overlayGroups = overlayGroups,
       position = "topleft"
     )
-
+  
   if (miniMap) {
     lf <- lf %>% leaflet::addMiniMap(toggleDisplay = TRUE, position = "bottomleft")
   }
-
+  
   return(lf)
 }
 

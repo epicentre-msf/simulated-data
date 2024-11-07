@@ -16,32 +16,37 @@ conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
 # Path to data
-path_measles <- fs::path(here::here(Sys.getenv("SHAREPOINT_PATH"), "EAST-AFRICA-MEASLES-2023 - Documents", "2. Data", "data", "measles_east_africa_linelist_compiled_2024-04-12_160114.rds") )
+path_measles <- fs::dir_ls(here::here(Sys.getenv("SHAREPOINT_PATH"), 
+                                      "EAST-AFRICA-MEASLES-2023 - Documents", 
+                                      "2. Data", 
+                                      "data"), 
+                           regex = ".rds") |> 
+  max()
 
 # read data
 dat <- readRDS(path_measles)
 
 # Clean data ----------------------
-
 dat_clean <- dat |>
+  
+  filter(ll_country != "YEM") |> 
+  
   mutate(
-    age_group = case_match(
-      age_group,
-      "0 - 5 mois" ~ "< 6 months",
-      "0 - 5 months" ~ "< 6 months",
-      "0 - 6 months" ~ "< 6 months",
-      "6 - 8 mois" ~ "6 - 8 months",
-      "9 - 11 mois" ~ "9 - 11 months",
-      "1 - 4 ans" ~ "1 - 4 years",
-      "12 - 59 months" ~ "1 - 4 years",
-      "5 - 14 ans" ~ "5 - 14 years",
-      "15 ans et plus" ~ "15+ years",
-      .default = age_group
+    age_unit = case_match(age_unit, "Months" ~ "Month", .default = age_unit),
+    age_num = if_else(age_num >= 12 & age_unit == "Month", ceiling(age_num/12), age_num ),
+    age_unit = if_else(age_num >= 12 & age_unit == "Month", "Year", age_unit ),
+    age_group = case_when(
+      age_unit == "Day" ~ "< 6 months",
+      age_num < 6 & age_unit == "Month" ~ "< 6 months",
+      between(age_num, 6, 8) & age_unit == "Month" ~ "6 - 8 months",
+      between(age_num, 9, 11) & age_unit == "Month" ~ "9 - 11 months",
+      between(age_num, 1, 4) & age_unit == "Year" ~ "1 - 4 years",
+      between(age_num, 5, 14) & age_unit == "Year" ~ "5 - 14 years",
+      age_num >= 15 & age_unit == "Year" ~ "15+ years" 
     ),
-    age_group = as.character(
+    age_group = fct(
       age_group,
-      c(
-        "< 6 months",
+      c("< 6 months",
         "6 - 8 months",
         "9 - 11 months",
         "1 - 4 years",
@@ -60,19 +65,12 @@ dat_clean <- dat |>
       "5 - 14 years" ~ "5-14",
       "15+ years" ~ "15-40",
       .default = age_group
-    ),
-    age_group = fct_relevel(
-      age_group,
-      c(
-        "< 6 months",
-        "6 - 8 months",
-        "9 - 11 months",
-        "1 - 4 years",
-        "5 - 14 years",
-        "15+ years"
-      )
     )
-  )
+  ) |> 
+  filter(!is.na(age_group))
+
+dat_chad <- dat_clean |> 
+  filter(ll_country == "TCD")
 
 # Define parameters -------------------------------------------------------
 
@@ -89,7 +87,7 @@ dist_contact <- epidist(
 )
 
 # distribution from onset to hospitalisation
-ons_hosp_dist <- dat |>
+ons_hosp_dist <- dat_chad |>
   filter(hospitalised_yn == "Yes") |>
   select(date_notification, date_symptom_start, date_hospitalisation_start, date_hospitalisation_end) |>
   filter(!is.na(date_symptom_start), !is.na(date_hospitalisation_start)) |>
@@ -107,18 +105,21 @@ ons_hosp_dist |>
   ggplot() +
   geom_density(aes(x = ons_hosp), col = "darkred") +
   scale_x_discrete(breaks = seq(0, 50, 1)) +
-  stat_function(fun = dgamma, args = list(shape = 1.9964291, rate = 0.4711589))
+  stat_function(fun = dgamma, args = list(shape = 1.7154417, rate = 0.5598577))
+#stat_function(fun = dweibull, args = list(shape = 1.135107, scale = 3.246650))
+#stat_function(fun = dnegbin, args = list(size = 2.402583, mu = 3.063271))
 
 # Onset hospitalisation distribution
 dist_ons_hosp <- epiparameter::epidist(
   disease = "Measles",
   epi_dist = "onset to hospitalisation",
   prob_distribution = "gamma",
-  prob_distribution_params = c(shape = 1.9964291, rate = 0.4711589)
+  prob_distribution_params = c(gamma$estimate[1], 
+                               gamma$estimate[2])
 )
 
 # Onset to death
-hosp_out <- dat |>
+hosp_out <- dat_chad |>
   filter(hospitalised_yn == "Yes", !is.na(outcome), !is.na(date_hospitalisation_end), !is.na(date_hospitalisation_start)) |>
   select(date_notification, date_symptom_start, date_hospitalisation_start, date_hospitalisation_end) |>
   mutate(hosp_out_var = as.numeric(date_hospitalisation_start - date_symptom_start)) |>
@@ -133,19 +134,23 @@ hosp_out |>
   ggplot() +
   geom_density(aes(x = hosp_out_var), col = "darkred") +
   scale_x_continuous(breaks = seq(0, 50, 1)) +
-  stat_function(fun = dgamma, args = list(shape = 1.9964291, rate = 0.4711589))
+  stat_function(fun = dgamma, args = list(shape = gamma$estimate[1], rate = gamma$estimate[2] ))
 
 # Onset hospitalisation distribution
 dist_hosp_out <- epiparameter::epidist(
   disease = "Measles",
   epi_dist = "hospitalisation to outcome",
   prob_distribution = "gamma",
-  prob_distribution_params = c(shape = 1.9964291, rate = 0.4711589)
+  prob_distribution_params = c(gamma$estimate[1], 
+                               gamma$estimate[2] )
 )
 
 # Infectious period is -4 / +4 from/after symptoms
-inf <- dat |>
-  filter(hospitalised_yn == "Yes", !is.na(outcome), !is.na(date_symptom_start), !is.na(date_hospitalisation_end)) |>
+inf <- dat_chad |>
+  filter(hospitalised_yn == "Yes", 
+         !is.na(outcome), 
+         !is.na(date_symptom_start), 
+         !is.na(date_hospitalisation_end)) |>
   select(date_notification, date_symptom_start, date_hospitalisation_end) |>
   mutate(inf_time = as.numeric(date_hospitalisation_end - date_symptom_start) + 4) |>
   filter(inf_time > 0, inf_time < 30)
@@ -159,24 +164,22 @@ inf |>
   ggplot() +
   geom_density(aes(x = inf_time), col = "darkred") +
   scale_x_continuous(breaks = seq(0, 50, 1)) +
-  stat_function(fun = dgamma, args = list(shape = 8.8244367, rate = 0.8406069))
+  stat_function(fun = dgamma, args = list(shape = gamma$estimate[1], rate = gamma$estimate[2]))
 
 # create Measles infectious period
 dist_infect_period <- epiparameter::epidist(
   disease = "Measles",
   epi_dist = "infectious period",
   prob_distribution = "gamma",
-  prob_distribution_params = c(shape = 8.8244367, rate = 0.8406069)
+  prob_distribution_params = c(gamma$estimate[1], gamma$estimate[2])
 )
-
 
 # define an age structure
 age_str <- dat_clean |>
   count(age_range) |>
   na.omit() |>
   mutate(p = round(n / sum(n), digits = 3)) |>
-  rename(proportion = p) |>
-  select(age_range, proportion)
+  select(age_range, p)
 
 # define hospitalisation based on age
 age_hosp <- dat_clean |>
@@ -194,7 +197,7 @@ age_hosp <- dat_clean |>
     .by = age_range,
     n = n(),
     n_hosp = sum(hospitalised_yn == "Yes", na.rm = TRUE),
-    risk = n_hosp / n
+    p = n_hosp / n
   ) |>
   mutate(age_limit = case_when(
     age_range == "0-1" ~ 0,
@@ -203,7 +206,7 @@ age_hosp <- dat_clean |>
     age_range == "15-40" ~ 15
   )) |>
   na.omit() |>
-  select(age_limit, risk)
+  select(age_limit, p)
 
 # under 1 age structure because sim_linelist only takes integer
 under_1_age_str <- dat_clean |>
@@ -232,7 +235,7 @@ sym_prob <- dat_clean |>
   ) |>
   select(age_group, contains("p_"))
 
-# Malnutrition 
+# Malnutrition
 muac_prob <- dat_clean |>
   drop_na(age_group, muac_adm) |>
   count(age_group, muac_adm) |>
@@ -266,7 +269,7 @@ doses_prob <- dat_clean |>
   mutate(
     .by = age_group,
     p = n / sum(n)
-  ) 
+  )
 
 # Hospital length distribution
 dist_hosp_length <- epiparameter::epidist(
@@ -276,17 +279,26 @@ dist_hosp_length <- epiparameter::epidist(
   prob_distribution_params = c(shape = 2.2251860, rate = 0.8541434)
 )
 
-# list all parameters together 
-measles_params <- list("dist_infect_period" = dist_infect_period,
-                       "dist_hosp_out" = dist_hosp_out, 
-                       "dist_ons_hosp" = dist_ons_hosp, 
-                       "dist_contact" = dist_contact, 
-                       "age_str" = age_str, 
-                       "age_hosp" = age_hosp, 
-                       "under_1_age_str" = under_1_age_str, 
-                       "sym_prob" = sym_prob, 
-                       "muac_prob" = muac_prob, 
-                       "vacc_prob" = vacc_prob, 
-                       "doses_prob" = doses_prob)
+# list all parameters together
+measles_params <- list(
+  "prob_infection" = prob_infection,
+  "dist_infect_period" = dist_infect_period,
+  "dist_hosp_out" = dist_hosp_out,
+  "dist_ons_hosp" = dist_ons_hosp,
+  "dist_contact" = dist_contact,
+  "age_str" = age_str,
+  "age_hosp" = age_hosp,
+  "under_1_age_str" = under_1_age_str,
+  "sym_prob" = sym_prob,
+  "muac_prob" = muac_prob,
+  "vacc_prob" = vacc_prob,
+  "doses_prob" = doses_prob
+)
+
+purrr::map(measles_params[c("age_str", "under_1_age_str") ], {
+  
+  ~ if(sum(.x$p) > 1 ) { stop(glue::glue("probabilities add up to more than 1 ! p : {round(digits = 2, sum(.x$p))}"))
+  } else {print("all good with probabilities")} 
+})
 
 saveRDS(measles_params, here::here("data", "clean", "measles_params.rds"))

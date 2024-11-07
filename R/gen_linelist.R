@@ -29,7 +29,7 @@ conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
 # read measles data
-#dat_clean <- readRDS(here::here("data", "clean", "real_measles_data.rds"))
+# dat_clean <- readRDS(here::here("data", "clean", "real_measles_data.rds"))
 
 # all params and distributions
 measles_params <- readRDS(here::here("data", "clean", "measles_params.rds"))
@@ -37,21 +37,28 @@ measles_params <- readRDS(here::here("data", "clean", "measles_params.rds"))
 # Generate the linelist -------------------------------------------------------
 
 # probability of infection upon contact
-prob_infection <- 0.53
 
 set.seed(4999)
 sim_ll <- sim_linelist(
   contact_distribution = measles_params$dist_contact,
   infect_period = measles_params$dist_infect_period,
-  prob_infect = prob_infection,
+  prob_infect = measles_params$prob_infection,
   onset_to_hosp = measles_params$dist_ons_hosp,
   onset_to_death = measles_params$dist_hosp_out,
-  hosp_risk = measles_params$age_hosp,
+  hosp_risk = rename(measles_params$age_hosp, risk = p),
   outbreak_start_date = as.Date("2022-08-13"),
   outbreak_size = c(100, 5000),
-  population_age = measles_params$age_str
+  population_age = rename(measles_params$age_str, proportion = p)
 ) |>
   as_tibble()
+
+# Plot 
+d <- sim_ll |> 
+  mutate(epiweek = floor_date(date_onset, unit = "week")) |> 
+  count(epiweek)
+
+ggplot(data = d)+
+  geom_col(aes(x = epiweek, y = n))
 
 # Age variables -----------------------------------------------------------
 sim_ll <- sim_ll |>
@@ -104,12 +111,10 @@ sim_ll <- sim_ll |>
       )
     ),
     # variable about hospitalisation
-    #hospitalisation = if_else(is.na(date_admission), "no", "yes"),
+    # hospitalisation = if_else(is.na(date_admission), "no", "yes"),
     hospitalisation = sample(c(NA, "yes"), size = nrow(sim_ll), replace = TRUE, prob = c(.05, .95)),
-    
-  ) |> 
-  
-  relocate(c(age, age_unit, age_group), .after = "sex") |> 
+  ) |>
+  relocate(c(age, age_unit, age_group), .after = "sex") |>
   relocate(hospitalisation, .before = date_admission)
 
 # Plots -------------------------------------------------------------------
@@ -134,15 +139,18 @@ ggplot(data = sim_ll) +
 
 
 # Dates variable ----------------------------------------------------------
-#we will make all cases hospitalised despite the output of sim_lis
+# we will make all cases hospitalised despite the output of sim_lis
 
-sim_ll <- sim_ll |> 
-  mutate(date_admission = case_when(is.na(date_admission) ~ date_onset + sample(c(1:5, NA), 
-                                                                                size = nrow(sim_ll), 
-                                                                                replace = TRUE, 
-                                                                                prob = c(.2, .2, .2, .2, .19, .01)), 
-                                    .default = date_admission)
-  ) 
+sim_ll <- sim_ll |>
+  mutate(date_admission = case_when(
+    is.na(date_admission) ~ date_onset + sample(
+      c(1:5, NA),
+      size = nrow(sim_ll),
+      replace = TRUE,
+      prob = c(.2, .2, .2, .2, .19, .01)
+    ),
+    .default = date_admission
+  ))
 
 
 # Add Geographic Variables -----------------------------------------------------------
@@ -214,10 +222,8 @@ mapview::mapview(
 # Add Symptoms variables  ----------------------------------------------------
 
 sim_ll <- sim_ll |>
-  
-  #join the symptoms distributions 
+  # join the symptoms distributions
   left_join(measles_params$sym_prob, by = "age_group") |>
-  
   mutate(
     fever = rbinom(n = nrow(sim_ll), size = 1, prob = p_fever),
     rash = rbinom(n = nrow(sim_ll), size = 1, prob = p_rash),
@@ -226,7 +232,6 @@ sim_ll <- sim_ll |>
     pneumonia = rbinom(n = nrow(sim_ll), size = 1, prob = p_pneumonia),
     encephalitis = rbinom(n = nrow(sim_ll), size = 1, prob = p_encephalitis),
   ) |>
-  
   select(-contains("p_"))
 
 # Malnutrition
@@ -236,15 +241,48 @@ muac_cat <- unique(measles_params$muac_prob$muac_adm)
 sim_ll <- sim_ll |>
   mutate(
     muac_cat = case_when(
-      age_group == "< 6 months" ~ sample(muac_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$muac_prob, age_group == "< 6 months")$p),
-      age_group == "6 - 8 months" ~ sample(muac_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$muac_prob, age_group == "6 - 8 months")$p),
-      age_group == "9 - 11 months" ~ sample(muac_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$muac_prob, age_group == "9 - 11 months")$p),
-      age_group == "1 - 4 years" ~ sample(muac_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$muac_prob, age_group == "1 - 4 years")$p),
-      age_group == "5 - 14 years" ~ sample(muac_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$muac_prob, age_group == "5 - 14 years")$p),
-      age_group == "15+ years" ~ sample(muac_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$muac_prob, age_group == "15+ years")$p)
+      age_group == "< 6 months" ~ sample(
+        muac_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(measles_params$muac_prob, age_group == "< 6 months")$p
+      ),
+      age_group == "6 - 8 months" ~ sample(
+        muac_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(
+          measles_params$muac_prob,
+          age_group == "6 - 8 months"
+        )$p
+      ),
+      age_group == "9 - 11 months" ~ sample(
+        muac_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(measles_params$muac_prob, age_group == "9 - 11 months")$p
+      ),
+      age_group == "1 - 4 years" ~ sample(
+        muac_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(measles_params$muac_prob, age_group == "1 - 4 years")$p
+      ),
+      age_group == "5 - 14 years" ~ sample(
+        muac_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(measles_params$muac_prob, age_group == "5 - 14 years")$p
+      ),
+      age_group == "15+ years" ~ sample(
+        muac_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(measles_params$muac_prob, age_group == "15+ years")$p
+      )
     ),
     
-    #distribute a muac value
+    # distribute a muac value
     muac = case_when(
       muac_cat == "Green (125+ mm)" ~ sample(125:250, replace = TRUE, size = nrow(sim_ll)),
       muac_cat == "Red (<115 mm)" ~ sample(60:114, replace = TRUE, size = nrow(sim_ll)),
@@ -365,8 +403,10 @@ p_death <- sim_ll |>
 
 sim_ll <- sim_ll |>
   bind_cols("p_death" = p_death$reg_p_death) |>
-  mutate(outcome = rbinom(n = nrow(sim_ll), size = 1, prob = p_death), 
-         outcome = as.logical(outcome))
+  mutate(
+    outcome = rbinom(n = nrow(sim_ll), size = 1, prob = p_death),
+    outcome = as.logical(outcome)
+  )
 
 # prop of deaths generated
 sim_ll |> tabyl(outcome)
@@ -420,7 +460,7 @@ gtsummary::tbl_regression(
 
 # Hospital exit -----------------------------------------------------------
 
-# randomly allocate a hospital length using a gamma 
+# randomly allocate a hospital length using a gamma
 # hosp_length <- dat_clean |>
 #   filter(hospitalised_yn == "Yes") |>
 #   drop_na(date_hospitalisation_end) |>
@@ -428,7 +468,7 @@ gtsummary::tbl_regression(
 #   select(date_hospitalisation_start, date_hospitalisation_end) |>
 #   mutate(delay = as.numeric(date_hospitalisation_end - date_hospitalisation_start)) |>
 #   filter(delay > 0)
-# 
+#
 # ggplot(data = hosp_length) +
 #   geom_density(aes(x = delay), binwidth = 1) +
 #   stat_function(fun = dgamma, args = list(shape = 2.2251860, rate = 0.8541434))
@@ -440,7 +480,7 @@ sim_ll <- sim_ll |>
     round(digits = 0, rgamma(nrow(sim_ll), shape = 2.2251860, rate = 0.8541434)),
     NA
   )) |>
-  #fix outcome and dates
+  # fix outcome and dates
   mutate(
     date_outcome = case_when(
       outcome & !is.na(date_death) ~ date_death,
@@ -449,15 +489,13 @@ sim_ll <- sim_ll |>
       .default = NA
     )
   ) |>
-  
   # add some variability to outcome
   mutate(outcome = case_when(
     outcome & hospitalisation == "yes" ~ sample(c("dead", "left against medical advice", NA), size = nrow(sim_ll), prob = c(.85, .02, .03), replace = TRUE),
     outcome & hospitalisation == "no" ~ sample(c("dead", NA), size = nrow(sim_ll), prob = c(.98, .02), replace = TRUE),
     !outcome ~ sample(c("recovered", "left against medical advice", NA), size = nrow(sim_ll), prob = c(.85, .02, .03), replace = TRUE)
   )) |>
-  
-  #create epi classification
+  # create epi classification
   mutate(
     epi_classification = if_else(
       hospitalisation == "yes",
@@ -475,84 +513,87 @@ sim_ll <- sim_ll |>
       )
     )
   ) |>
-  
   select(-c(hosp_length, p_death, case_type, date_death))
 
 
 # Hospital data -----------------------------------------------------------
 
-# Add hospitals 
+# Add hospitals
 
-sim_ll <- sim_ll |> 
-  
+sim_ll <- sim_ll |>
   mutate(site = case_when(
-    sub_prefecture == "Moissala" ~ "Moïssala Hospital", 
-    sub_prefecture == "Danamadji" ~ "Danamadji Hospital", 
-    sub_prefecture == "Bedaya" ~ "Bedaya Hospital", 
-    sub_prefecture == "Bekourou" ~ "Bekourou Hospital", 
-    sub_prefecture == "Bouna" ~ "Bouna Hospital", 
-    sub_prefecture == "Koumogo" ~ "Koumogo Hospital", 
-  )) |> 
+    sub_prefecture == "Moissala" ~ "Moïssala Hospital",
+    sub_prefecture == "Danamadji" ~ "Danamadji Hospital",
+    sub_prefecture == "Bedaya" ~ "Bedaya Hospital",
+    sub_prefecture == "Bekourou" ~ "Bekourou Hospital",
+    sub_prefecture == "Bouna" ~ "Bouna Hospital",
+    sub_prefecture == "Koumogo" ~ "Koumogo Hospital",
+  )) |>
   relocate(site, .after = id)
 
-ggplot(data = sim_ll)+
-  geom_histogram(aes(x = date_onset ))+
-  facet_wrap(~ site)
+ggplot(data = sim_ll) +
+  geom_histogram(aes(x = date_onset)) +
+  facet_wrap(~site)
 
 # RDT Malaria  -----------------------------------------------------------
 
-#incidence of Malaria in Moissala 
+# incidence of Malaria in Moissala
 # 684 cases per 1000 in 2021
 
 # prev = incidence * duration disease
 # say mean duration is 7 days (0.0192 year)
-# prev in moissala is 684*0.0192 = 13,13 per 1000, so 1.3% 
-sim_ll <- sim_ll |> 
-  
-  mutate(malaria_rdt = sample(c("positive", "negative", "inconclusive", NA),
-                              replace = TRUE, size = nrow(sim_ll), 
-                              prob = c(0.013, 0.737, 0.15, 0.1) ) )
+# prev in moissala is 684*0.0192 = 13,13 per 1000, so 1.3%
+sim_ll <- sim_ll |>
+  mutate(malaria_rdt = sample(
+    c("positive", "negative", "inconclusive", NA),
+    replace = TRUE,
+    size = nrow(sim_ll),
+    prob = c(0.013, 0.737, 0.15, 0.1)
+  ))
 
 # Onset date --------------------------------------------------------------
-#make some onset date NA 
+# make some onset date NA
 
-#random rows id to make NA
+# random rows id to make NA
 rows_id <- sample(1:nrow(sim_ll), replace = FALSE, size = 300)
 
-sim_ll <- sim_ll |> 
-  mutate( date_onset = case_when(row_number() %in% rows_id ~ NA, 
-                                 .default = date_onset)
-  ) |> select(-c(date_first_contact, date_last_contact))
+sim_ll <- sim_ll |>
+  mutate(date_onset = case_when(
+    row_number() %in% rows_id ~ NA,
+    .default = date_onset
+  )) |>
+  select(-c(date_first_contact, date_last_contact))
 
-#order variables
-sim_ll <- sim_ll |> select(id,
-                          site,
-                          case_name,
-                          sex,
-                          age,
-                          age_unit,
-                          age_group,
-                          region,
-                          sub_prefecture, 
-                          date_onset, 
-                          hospitalisation, 
-                          date_admission, 
-                          ct_value, 
-                          malaria_rdt, 
-                          fever, 
-                          rash, 
-                          cough, 
-                          red_eye, 
-                          pneumonia, 
-                          encephalitis, 
-                          muac, 
-                          muac_cat, 
-                          vacc_status, 
-                          vacc_doses, 
-                          outcome, 
-                          date_outcome, 
-                          epi_classification
-) 
+# order variables
+sim_ll <- sim_ll |> select(
+  id,
+  site,
+  case_name,
+  sex,
+  age,
+  age_unit,
+  age_group,
+  region,
+  sub_prefecture,
+  date_onset,
+  hospitalisation,
+  date_admission,
+  ct_value,
+  malaria_rdt,
+  fever,
+  rash,
+  cough,
+  red_eye,
+  pneumonia,
+  encephalitis,
+  muac,
+  muac_cat,
+  vacc_status,
+  vacc_doses,
+  outcome,
+  date_outcome,
+  epi_classification
+)
 
 export(sim_ll, here::here("data", "clean", "simulated_measles_ll.rds"))
 
