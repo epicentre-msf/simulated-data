@@ -1,0 +1,49 @@
+<header id="title-block-header" class="container-fluid bg-light py-3">
+  <div class="grid align-items-center">
+    <!-- Left Logo -->
+    <div class="g-col-12 g-col-md-3 p-2 text-center">
+      $if(logo1)$
+      <img src="$logo1$" class="img-fluid" style="max-height: 60px;">
+      $endif$
+    </div>
+
+    <!-- Title and Subtitle in the center -->
+    <div class="g-col-12 g-col-md-6 p-2 text-center">
+      <h1 class="title">$title$</h1>
+      $if(subtitle)$
+      <p class="subtitle">$subtitle$</p>
+      $endif$
+    </div>
+
+    <!-- Right Logo -->
+    <div class="g-col-12 g-col-md-3 p-2 text-center">
+      $if(logo2)$
+      <img src="$logo2$" class="img-fluid" style="max-height: 60px;">
+      $endif$
+    </div>
+  </div>
+</header>
+
+<div class="quarto-title-meta column-body d-flex justify-content-between pb-3">
+
+  $if(author)$
+  <div class="p-2">
+    <div class="quarto-title-meta-heading text-muted">Author</div>
+    <div class="quarto-title-meta-contents">
+      $for(author)$
+      <p class="author">$author$</p>
+      $endfor$
+    </div>
+  </div>
+  $endif$
+
+  $if(date)$
+  <div class="p-2">
+    <div class="quarto-title-meta-heading text-muted">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">$date$</p>
+    </div>
+  </div>
+  $endif$
+
+</div>

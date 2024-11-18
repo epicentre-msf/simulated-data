@@ -1,4 +1,18 @@
-# Using real data to infer some distribution for a measles outbreak linelist
+
+# ---------------------------
+# Purpose of script: fetch distributions from Measles data in the East africa dashboard
+#
+# Author: Hugo Soubrier
+#
+# Date Created: 2024-11-12
+#
+# Email: hugo.soubrier@epicentre.msf.org
+# ---------------------------
+# Notes:
+#   
+#
+#
+# ---------------------------
 
 pacman::p_load(
   rio, # import funcs
@@ -15,7 +29,7 @@ pacman::p_load(
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
-# Path to data
+# Path to East africa dashboard data - you need to make sure it is sync to your drive
 path_measles <- fs::dir_ls(here::here(Sys.getenv("SHAREPOINT_PATH"), 
                                       "EAST-AFRICA-MEASLES-2023 - Documents", 
                                       "2. Data", 
@@ -29,6 +43,7 @@ dat <- readRDS(path_measles)
 # Clean data ----------------------
 dat_clean <- dat |>
   
+  #remove Yemen
   filter(ll_country != "YEM") |> 
   
   mutate(
@@ -69,6 +84,7 @@ dat_clean <- dat |>
   ) |> 
   filter(!is.na(age_group))
 
+# Filter Chad out
 dat_chad <- dat_clean |> 
   filter(ll_country == "TCD")
 
@@ -89,7 +105,10 @@ dist_contact <- epidist(
 # distribution from onset to hospitalisation
 ons_hosp_dist <- dat_chad |>
   filter(hospitalised_yn == "Yes") |>
-  select(date_notification, date_symptom_start, date_hospitalisation_start, date_hospitalisation_end) |>
+  select(date_notification, 
+         date_symptom_start, 
+         date_hospitalisation_start, 
+         date_hospitalisation_end) |>
   filter(!is.na(date_symptom_start), !is.na(date_hospitalisation_start)) |>
   mutate(ons_hosp = as.numeric(date_hospitalisation_start - date_symptom_start)) |>
   filter(ons_hosp < 50, ons_hosp > 0)
@@ -105,7 +124,7 @@ ons_hosp_dist |>
   ggplot() +
   geom_density(aes(x = ons_hosp), col = "darkred") +
   scale_x_discrete(breaks = seq(0, 50, 1)) +
-  stat_function(fun = dgamma, args = list(shape = 1.7154417, rate = 0.5598577))
+  stat_function(fun = dgamma, args = list(shape = gamma$estimate[1], rate = gamma$estimate[2]))
 #stat_function(fun = dweibull, args = list(shape = 1.135107, scale = 3.246650))
 #stat_function(fun = dnegbin, args = list(size = 2.402583, mu = 3.063271))
 

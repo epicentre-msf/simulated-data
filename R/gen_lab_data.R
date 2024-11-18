@@ -1,4 +1,17 @@
-#generate lab data to match the linelist 
+# ---------------------------
+# Purpose of script: generate lab data to match the simulated linelist 
+#
+# Author: Hugo Soubrier
+#
+# Date Created: 2024-11-12
+#
+# Email: hugo.soubrier@epicentre.msf.org
+# ---------------------------
+# Notes:
+# This script has to be run after the gen_linelist.R
+#
+#
+# ---------------------------
 
 pacman::p_load(
   rio, # import funcs
@@ -74,9 +87,6 @@ inc <- inc |>
 #bind inconclusives back 
 lab <- bind_rows(lab, inc) |> select(id, lab_id, date_test, ct_value, lab_result)
 
-lab_sub <- lab |> filter(date_test < "2023-06-11")
-
-
 # rename some variables 
 lab_raw <- lab |> 
   rename(
@@ -89,16 +99,3 @@ lab_raw <- lab |>
 
 export(lab, here::here("data", "clean", "simulated_measles_lab_data.rds"))
 export(lab_raw, here::here("data", "final", "msf_laboratory_moissala_2023-09-24.xlsx"))
-
-
-lab_raw_sub <- lab_sub |> 
-  rename(
-    `MSF Number ID` = id, 
-    `Laboratory id` = lab_id, 
-    ` Date of the test` =  date_test,
-    `CT value` = ct_value, 
-    `Final Test Result` = lab_result
-  )
-
-export(lab_raw_sub, here::here("data", "final", "msf_laboratory_moissala_2023-06-11.xlsx"))
-

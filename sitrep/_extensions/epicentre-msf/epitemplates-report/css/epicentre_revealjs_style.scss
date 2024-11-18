@@ -1,0 +1,83 @@
+/*-- scss:defaults --*/
+
+$col-primary: #2E4473;
+$col-primary-light: #E4EDF3;
+$col-secondary: #A1B8CF;
+$col-secondary-bg: #F5F9FB;
+$col-dark-grey: #C5C5C5;
+$col-light-grey: #F8F8F8;
+$col-red-prim : #C0392B;
+$col-red-sec : #F9EBEA;
+$col-yellow-prim : #FAB872;
+$col-yellow-sec : #FEF6E7;
+$body-bg: white;
+
+/* Font size and color */ 
+$presentation-font-size-root: 35px;
+$presentation-font-smaller: 0.8;
+
+$presentation-h1-font-size: 80px;
+$presentation-h2-font-size: 65px;
+$presentation-h3-font-size: 40px; 
+$presentation-h4-font-size: 40px; 
+
+$presentation-heading-color: $col-primary; 
+
+/* code blocks*/
+$code-block-bg: $col-secondary-bg;
+$code-block-border-color: $col-primary;
+$code-block-font-size: 0.55em;
+
+/* inline code */
+$code-bg: $col-secondary-bg;
+$code-color: $col-primary; 
+
+/* tabsets */ 
+$tabset-border-color:$col-primary;
+
+/*layout */
+
+$presentation-title-slide-text-align: left ; 
+
+/*-- scss:rules --*/
+
+.reveal .slide-background-content {
+    background-image: linear-gradient(#80b882, #37578b) !important;
+}
+
+p.subtitle {
+  font-style: italic;
+  color: $col-secondary;
+}
+
+.quarto-title-affiliation {
+  font-style: italic;
+}
+/* BLOCKQUOTE */
+.blockquote {
+  font-size: 1em;
+  color: $col-primary;
+  border-left-color: $col-primary;
+}
+
+/* Inline code */
+code {
+  border-radius: 5px;
+}
+
+/* Important call out */ 
+.important {
+  background-color: $col-red-sec;
+  border-left: 6px solid $col-red-prim;
+  /*border: 1px solid #da222200;*/
+  border-radius: 4px;
+  padding: 10px 10px 10px 10px;
+  margin: 10px 0px 10px 0px;
+  position: relative;
+  width: fit-content;
+}
+
+.important p {
+  width: fit-content;
+  margin: 0;
+}

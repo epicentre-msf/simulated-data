@@ -1,0 +1,43 @@
+title: Report
+version: 1.0.0
+quarto-required: ">=1.4.0"
+contributes:
+  format:
+    html:
+      theme: 
+        - cosmo
+        - css/epicentre_qmd_style.scss
+      title-block-banner: true
+      template-partials: 
+        - partials/title-block.html
+      logo1: img/epicentre_msf_logo_transparent.png
+      embed-resources: true
+      smooth-scroll: true
+      code-fold: show
+      code-tools: false
+      toc: true
+      toc-location: left
+      toc-float: true
+      toc-collapsed: true
+      callout-appearance: minimal
+    revealjs:
+      logo: img/epicentre_logo.png
+      incremental: false
+      slide-number: c/t
+      overview: true
+      progress: true
+      embed-resources: true
+      title-slide-attributes: 
+        data-background-image: img/title-bg.png
+        data-background-size: contain
+    pptx:
+      incremental: true
+      reference-doc: pptx/epicentre-pptx-template.pptx
+    pdf:
+      toc: true
+      papersize: a4paper
+      include-in-header:
+        - pdf/header.tex
+      classoption: oneside
+    docx:
+      reference-doc: docx/reference.docx 

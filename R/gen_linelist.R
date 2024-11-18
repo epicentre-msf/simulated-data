@@ -1,15 +1,18 @@
-# ===
-# Purpose of script: generate a fake linelist of a measle outbreak in Moissala (Chad)
+
+# ---------------------------
+# Purpose of script: use {simulist} to generate a linelist of a measle outbreak in Moissala (Chad)
 #
 # Author: Hugo Soubrier
-
-# ===
+#
+# Date Created: 2024-11-12
+#
+# Email: hugo.soubrier@epicentre.msf.org
+# ---------------------------
 # Notes:
-# We are using the data from the East Africa dashboard to estimate the distributions of several variables
-# so that the outbreak remains close to reality
+# the different distributions used in simulist come from measles_data.R
 #
 #
-# ===
+# ---------------------------
 
 # Load packages ---------------------------
 
@@ -38,7 +41,7 @@ measles_params <- readRDS(here::here("data", "clean", "measles_params.rds"))
 
 # probability of infection upon contact
 
-set.seed(4999)
+set.seed(119236)
 sim_ll <- sim_linelist(
   contact_distribution = measles_params$dist_contact,
   infect_period = measles_params$dist_infect_period,
@@ -58,7 +61,9 @@ d <- sim_ll |>
   count(epiweek)
 
 ggplot(data = d)+
-  geom_col(aes(x = epiweek, y = n))
+  geom_col(aes(x = epiweek, 
+               y = n)
+           )
 
 # Age variables -----------------------------------------------------------
 sim_ll <- sim_ll |>
@@ -137,9 +142,8 @@ ggplot(data = sim_ll) +
     binwidth = 7
   )
 
-
 # Dates variable ----------------------------------------------------------
-# we will make all cases hospitalised despite the output of sim_lis
+# we will make all cases hospitalised despite the output of sim_lists
 
 sim_ll <- sim_ll |>
   mutate(date_admission = case_when(
@@ -151,7 +155,6 @@ sim_ll <- sim_ll |>
     ),
     .default = date_admission
   ))
-
 
 # Add Geographic Variables -----------------------------------------------------------
 

@@ -1,0 +1,64 @@
+---
+title: "Document title"
+subtitle: EpiDS team - Epicentre, Paris
+footer: Epicentre - Médecins Sans Frontières
+format: 
+  epitemplates-report-html: default
+author:
+  - name: Author 1
+    email: email.author.1@epicentre.msf.org
+  - name: Author 2
+    email: email.author.2@epicentre.msf.org
+date: last-modified
+date-format: long
+comments:
+  hypothesis: true
+---
+
+```{r setup}
+#| include: false
+
+library(fs)         # work with path
+library(here)       # create relative paths
+library(rio)        # import files
+library(janitor)    # data cleaning
+library(lubridate)  # date handling
+library(tidyverse)  # data science 
+```
+
+# Primary title
+
+1. *Italic* and **Bold** will turn out like this
+
+2. Tooltip are trickier to use than in a normal `.Rmd` not set-up here yet
+
+3. Inline coding will turn out `like this`
+
+4. You can also annotate and comment the text. This requires an account on [Hypothes.is](https://web.hypothes.is/)
+
+## Secondary title
+
+::: {.callout-note}
+**This is a Note** using `{.callout-note}`
+:::
+
+::: {.callout-caution}
+**This is a warning** using `{.callout-caution}`. They can be collapsed using `collapse="true"` 
+:::
+
+::: {.callout-important}
+**This is an important note** using `{.callout-important}`
+:::
+
+> This is a `blockquote` made using `>` 
+
+### Tertiary title
+
+```{yaml}
+#| eval: false
+# Use this global options in YAML to hide all code chunks
+---
+execute: 
+  echo: false 
+---
+```

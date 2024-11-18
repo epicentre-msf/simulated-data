@@ -75,7 +75,8 @@ sim_raw <- sim_raw |>
             case_name, 
             age_group, 
             epi_classification, 
-            muac_cat))
+            muac_cat)
+  )
 
 # rename variables 
 sim_raw |> names()
@@ -109,10 +110,10 @@ sim_raw_final <- sim_raw |>
 #export in Excel 
 export(sim_raw_final, here::here("data", "final", "msf_linelist_moissala_2023-09-24.xlsx"))
 
-# Keep only half of the outbreak
-sim_raw_sub <- sim_raw_final |> 
-  
-  filter(`Date of onset of symptoms` < "2023-06-11")
-
-#export in Excel 
-export(sim_raw_sub, here::here("data", "final", "msf_linelist_moissala_2023-06-11.xlsx"))
+# # Keep only half of the outbreak
+# sim_raw_sub <- sim_raw_final |> 
+#   
+#   filter(`Date of onset of symptoms` < "2023-06-11")
+# 
+# #export in Excel 
+# export(sim_raw_sub, here::here("data", "final", "msf_linelist_moissala_2023-06-11.xlsx"))
