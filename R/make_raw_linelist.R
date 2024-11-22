@@ -117,6 +117,8 @@ sim_raw_final <- sim_raw |>
 #export in Excel 
 export(sim_raw_final, here::here("data", "final", "msf_linelist_moissala_2023-09-24.xlsx"))
 
+export(sim_raw_final, here::here("data", "final", "msf_linelist_moissala_2023-09-24.csv"))
+
 # # Keep only half of the outbreak
 # sim_raw_sub <- sim_raw_final |> 
 #   
