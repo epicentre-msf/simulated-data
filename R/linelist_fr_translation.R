@@ -31,7 +31,10 @@ pacman::p_load(
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
-# Load data ------------------------------
+
+# Translate linelist ------------------------------
+
+## Clean linelist ------------------------------
 
 # read clean measles data
 sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll.rds"))
@@ -131,6 +134,10 @@ sim_clean_fr <- sim_clean |>
 # save the fr clean version
 saveRDS(sim_clean_fr, here::here("data", "clean", "simulated_measles_ll_fr.rds"))
 
+
+
+## Raw linelist ----------------------------
+
 # Load the raw linelist
 
 sim_raw_final <- import(here::here("data", "final", "msf_linelist_moissala_2023-09-24.xlsx")) |> as_tibble()
@@ -201,8 +208,13 @@ sim_raw_final_fr <- sim_raw_final |>
 #save the raw data
 saveRDS(sim_raw_final_fr, here::here("data", "final", "msf_linelist_moissala_2023-09-24_fr.xlsx"))
 
+# To csv
+export(sim_raw_final_fr, here::here("data", "final", "msf_linelist_moissala_2023-09-24_fr.csv"))
 
-# LABORATORY data translation -------------- -------------- -------------- --------------
+
+# Translate lab data --------------------------------------------------------------
+
+## Clean data ----------------------------------------------
 
 # import lab clean data 
 lab_clean <- readRDS(here::here("data", "clean", "simulated_measles_lab_data.rds"))
@@ -249,6 +261,9 @@ lab_clean_fr <- lab_clean |>
 
 #save clean lab result 
 saveRDS(lab_clean_fr, here::here("data", "clean", "simulated_measles_lab_data_fr.rds"))
+
+
+## Raw data ------------------------------------------------
 
 #import raw lab data
 lab_raw <- import(here::here("data", "final", "msf_laboratory_moissala_2023-09-24.xlsx")) |> as_tibble()
