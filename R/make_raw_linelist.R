@@ -25,6 +25,13 @@ pacman::p_load(
   lubridate, # date handling
   tidyverse # data science
 )
+
+# If pacman fails:
+# install.packages('simulist', 
+# repos = c('https://epiverse-trace.r-universe.dev', 
+#           'https://cloud.r-project.org'))
+
+
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
