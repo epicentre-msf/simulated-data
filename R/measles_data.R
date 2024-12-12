@@ -110,12 +110,14 @@ dat_chad <- dat_clean |>
 prob_infection <- 0.5
 
 # create contact distribution - Poisson, mean 2, can't really find better
-dist_contact <- epidist(
-  disease = "Measles",
+dist_contact <- epiparameter::epiparameter(
+  disease  = "Measles",
   pathogen = "Measles Virus",
-  epi_dist = "contact distribution",
-  prob_distribution = "pois",
-  prob_distribution_params = c(mean = 2)
+  epi_name = "contact distribution",
+  prob_distribution = create_prob_distribution(
+    prob_distribution = "pois",
+    prob_distribution_params = c(mean = 2)
+    )
 )
 
 
@@ -148,12 +150,15 @@ ons_hosp_dist |>
 #stat_function(fun = dnegbin, args = list(size = 2.402583, mu = 3.063271))
 
 # Onset hospitalisation distribution
-dist_ons_hosp <- epiparameter::epidist(
+dist_ons_hosp <- epiparameter::epiparameter(
   disease = "Measles",
-  epi_dist = "onset to hospitalisation",
-  prob_distribution = "gamma",
-  prob_distribution_params = c(gamma$estimate[1], 
-                               gamma$estimate[2])
+  epi_name = "onset to hospitalisation",
+  prob_distribution = create_prob_distribution(
+    prob_distribution = "gamma",
+    prob_distribution_params = c(gamma$estimate[1], 
+                                 gamma$estimate[2])
+  )
+
 )
 
 ## Onset to death --------------------------------------
@@ -176,12 +181,14 @@ hosp_out |>
   stat_function(fun = dgamma, args = list(shape = gamma$estimate[1], rate = gamma$estimate[2] ))
 
 # Onset hospitalisation distribution
-dist_hosp_out <- epiparameter::epidist(
+dist_hosp_out <- epiparameter::epiparameter(
   disease = "Measles",
-  epi_dist = "hospitalisation to outcome",
-  prob_distribution = "gamma",
-  prob_distribution_params = c(gamma$estimate[1], 
-                               gamma$estimate[2] )
+  epi_name = "hospitalisation to outcome",
+  prob_distribution = create_prob_distribution(
+    prob_distribution = "gamma",
+    prob_distribution_params = c(gamma$estimate[1], 
+                                 gamma$estimate[2] )
+  )
 )
 
 ## Infectious period ---------------------------------------
@@ -207,11 +214,13 @@ inf |>
   stat_function(fun = dgamma, args = list(shape = gamma$estimate[1], rate = gamma$estimate[2]))
 
 # create Measles infectious period
-dist_infect_period <- epiparameter::epidist(
+dist_infect_period <- epiparameter::epiparameter(
   disease = "Measles",
-  epi_dist = "infectious period",
-  prob_distribution = "gamma",
-  prob_distribution_params = c(gamma$estimate[1], gamma$estimate[2])
+  epi_name = "infectious period",
+  prob_distribution = create_prob_distribution(
+    prob_distribution = "gamma",
+    prob_distribution_params = c(gamma$estimate[1], gamma$estimate[2])
+  )
 )
 
 ## Age structure -------------------------------------------
@@ -323,9 +332,12 @@ doses_prob <- dat_clean |>
 # Hospital length ------------------------------------------
 dist_hosp_length <- epiparameter::epiparameter(
   disease = "Measles",
-  epi_dist = "hospitalisation length",
-  prob_distribution = "gamma",
-  prob_distribution_params = c(shape = 2.2251860, rate = 0.8541434)
+  epi_name = "hospitalisation length",
+  prob_distribution = create_prob_distribution(
+    prob_distribution = "gamma",
+    prob_distribution_params = c(shape = 2.2251860, 
+                                 rate = 0.8541434)
+  )
 )
 
 # Gather and save ------------------------------------------
