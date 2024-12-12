@@ -1,5 +1,3 @@
-
-# ---------------------------
 # Purpose of script: fetch distributions from Measles data in the East Africa dashboard
 #
 # Author: Hugo Soubrier
@@ -7,12 +5,15 @@
 # Date Created: 2024-11-12
 #
 # Email: hugo.soubrier@epicentre.msf.org
-# ---------------------------
+
+
 # Notes:
-#   
-#
-#
-# ---------------------------
+
+
+
+# Setup -----------------------------------------------
+
+## Packages --------------------------------------------
 
 pacman::p_load(
   rio, # import funcs
@@ -34,13 +35,20 @@ conflicted::conflict_prefer("filter", "dplyr")
 # repos = c('https://epiverse-trace.r-universe.dev', 
 #           'https://cloud.r-project.org'))
 
-# Path to East africa dashboard data - you need to make sure it is sync to your drive
+
+
+## Paths -----------------------------------------------
+
+# Path to East Africa dashboard data - you need to make sure it is sync to your drive
 path_measles <- fs::dir_ls(here::here(Sys.getenv("SHAREPOINT_PATH"), 
                                       "EAST-AFRICA-MEASLES-2023 - Documents", 
                                       "2. Data", 
                                       "data"), 
                            regex = ".rds") |> 
   max()
+
+
+## Get data ---------------------------------------
 
 # read data
 dat <- readRDS(path_measles)
@@ -95,6 +103,9 @@ dat_chad <- dat_clean |>
 
 # Define parameters -------------------------------------------------------
 
+
+## Contact distribution --------------------------------
+
 # probability of infection upon contact
 prob_infection <- 0.5
 
@@ -106,6 +117,9 @@ dist_contact <- epidist(
   prob_distribution = "pois",
   prob_distribution_params = c(mean = 2)
 )
+
+
+## Onset to hospitalisation ----------------------------
 
 # distribution from onset to hospitalisation
 ons_hosp_dist <- dat_chad |>
@@ -142,6 +156,7 @@ dist_ons_hosp <- epiparameter::epidist(
                                gamma$estimate[2])
 )
 
+## Onset to death --------------------------------------
 # Onset to death
 hosp_out <- dat_chad |>
   filter(hospitalised_yn == "Yes", !is.na(outcome), !is.na(date_hospitalisation_end), !is.na(date_hospitalisation_start)) |>
@@ -169,6 +184,7 @@ dist_hosp_out <- epiparameter::epidist(
                                gamma$estimate[2] )
 )
 
+## Infectious period ---------------------------------------
 # Infectious period is -4 / +4 from/after symptoms
 inf <- dat_chad |>
   filter(hospitalised_yn == "Yes", 
@@ -197,6 +213,8 @@ dist_infect_period <- epiparameter::epidist(
   prob_distribution = "gamma",
   prob_distribution_params = c(gamma$estimate[1], gamma$estimate[2])
 )
+
+## Age structure -------------------------------------------
 
 # define an age structure
 age_str <- dat_clean |>
@@ -238,6 +256,9 @@ under_1_age_str <- dat_clean |>
   count(age_group) |>
   mutate(p = n / sum(n))
 
+
+## Symptoms --------------------------------------------------
+
 # Symptoms probabilities from data
 sym_prob <- dat_clean |>
   drop_na(age_group) |>
@@ -259,7 +280,9 @@ sym_prob <- dat_clean |>
   ) |>
   select(age_group, contains("p_"))
 
-# Malnutrition
+
+## Malnutrition ---------------------------------------------
+
 muac_prob <- dat_clean |>
   drop_na(age_group, muac_adm) |>
   count(age_group, muac_adm) |>
@@ -268,7 +291,8 @@ muac_prob <- dat_clean |>
     p = n / sum(n)
   )
 
-# Vaccination status
+## Vaccination status ---------------------------------------
+
 vacc_prob <- dat_clean |>
   drop_na(age_group) |>
   count(
@@ -295,13 +319,16 @@ doses_prob <- dat_clean |>
     p = n / sum(n)
   )
 
-# Hospital length distribution
-dist_hosp_length <- epiparameter::epidist(
+
+# Hospital length ------------------------------------------
+dist_hosp_length <- epiparameter::epiparameter(
   disease = "Measles",
   epi_dist = "hospitalisation length",
   prob_distribution = "gamma",
   prob_distribution_params = c(shape = 2.2251860, rate = 0.8541434)
 )
+
+# Gather and save ------------------------------------------
 
 # list all parameters together
 measles_params <- list(
@@ -318,6 +345,7 @@ measles_params <- list(
   "vacc_prob" = vacc_prob,
   "doses_prob" = doses_prob
 )
+
 
 purrr::map(measles_params[c("age_str", "under_1_age_str") ], {
   
