@@ -1,6 +1,6 @@
 
 # ---------------------------
-# Purpose of script: fetch distributions from Measles data in the East africa dashboard
+# Purpose of script: fetch distributions from Measles data in the East Africa dashboard
 #
 # Author: Hugo Soubrier
 #
@@ -28,6 +28,11 @@ pacman::p_load(
 )
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
+
+# If pacman fails:
+# install.packages('simulist', 
+# repos = c('https://epiverse-trace.r-universe.dev', 
+#           'https://cloud.r-project.org'))
 
 # Path to East africa dashboard data - you need to make sure it is sync to your drive
 path_measles <- fs::dir_ls(here::here(Sys.getenv("SHAREPOINT_PATH"), 
