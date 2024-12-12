@@ -16,16 +16,16 @@
 ## Packages --------------------------------------------
 
 pacman::p_load(
-  rio, # import funcs
-  simulist, # generate fake linelist
+  rio,       # import funcs
+  simulist,  # generate fake linelist
   epiparameter, # get epi parameters
   fitdistrplus, # fit best distribution
-  sf, # work with spatial data
-  fs, # work with path
-  here, # create relative paths
-  janitor, # data cleaning
+  sf,        # work with spatial data
+  fs,        # work with path
+  here,      # create relative paths
+  janitor,   # data cleaning
   lubridate, # date handling
-  tidyverse # data science
+  tidyverse  # data science
 )
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
@@ -52,6 +52,7 @@ path_measles <- fs::dir_ls(here::here(Sys.getenv("SHAREPOINT_PATH"),
 
 # read data
 dat <- readRDS(path_measles)
+
 
 # Clean data ----------------------
 dat_clean <- dat |>
@@ -137,15 +138,17 @@ ons_hosp_dist <- dat_chad |>
 summary(ons_hosp_dist$ons_hosp)
 
 # Try different distribution
-gamma <- fitdist(ons_hosp_dist$ons_hosp, distr = "gamma", method = "mle")
+gamma   <- fitdist(ons_hosp_dist$ons_hosp, distr = "gamma",   method = "mle")
 weibull <- fitdist(ons_hosp_dist$ons_hosp, distr = "weibull", method = "mle")
-negbin <- fitdist(ons_hosp_dist$ons_hosp, distr = "nbinom", method = "mle")
+negbin  <- fitdist(ons_hosp_dist$ons_hosp, distr = "nbinom",  method = "mle")
 
 ons_hosp_dist |>
   ggplot() +
   geom_density(aes(x = ons_hosp), col = "darkred") +
   scale_x_discrete(breaks = seq(0, 50, 1)) +
-  stat_function(fun = dgamma, args = list(shape = gamma$estimate[1], rate = gamma$estimate[2]))
+  stat_function(fun = dgamma, 
+                args = list(shape = gamma$estimate[1], 
+                            rate = gamma$estimate[2]))
 #stat_function(fun = dweibull, args = list(shape = 1.135107, scale = 3.246650))
 #stat_function(fun = dnegbin, args = list(size = 2.402583, mu = 3.063271))
 
@@ -164,8 +167,11 @@ dist_ons_hosp <- epiparameter::epiparameter(
 ## Onset to death --------------------------------------
 # Onset to death
 hosp_out <- dat_chad |>
-  filter(hospitalised_yn == "Yes", !is.na(outcome), !is.na(date_hospitalisation_end), !is.na(date_hospitalisation_start)) |>
-  select(date_notification, date_symptom_start, date_hospitalisation_start, date_hospitalisation_end) |>
+  filter(hospitalised_yn == "Yes", !is.na(outcome), 
+         !is.na(date_hospitalisation_end), 
+         !is.na(date_hospitalisation_start)) |>
+  select(date_notification, date_symptom_start, 
+         date_hospitalisation_start, date_hospitalisation_end) |>
   mutate(hosp_out_var = as.numeric(date_hospitalisation_start - date_symptom_start)) |>
   filter(hosp_out_var > 0, hosp_out_var < 80)
 
@@ -177,8 +183,10 @@ gamma <- fitdist(hosp_out$hosp_out_var, distr = "gamma", method = "mle")
 hosp_out |>
   ggplot() +
   geom_density(aes(x = hosp_out_var), col = "darkred") +
-  scale_x_continuous(breaks = seq(0, 50, 1)) +
-  stat_function(fun = dgamma, args = list(shape = gamma$estimate[1], rate = gamma$estimate[2] ))
+  scale_x_continuous(breaks = seq(0, 50, 5)) +
+  stat_function(fun = dgamma, 
+                args = list(shape = gamma$estimate[1], 
+                            rate = gamma$estimate[2] ))
 
 # Onset hospitalisation distribution
 dist_hosp_out <- epiparameter::epiparameter(
@@ -278,10 +286,10 @@ sym_prob <- dat_clean |>
     p_fever = round(digits = 3, n_fever / n),
     n_cough = sum(cough == "Yes", na.rm = TRUE),
     p_cough = round(digits = 3, n_cough / n),
-    n_rash = sum(rash == "Yes", na.rm = TRUE),
-    p_rash = round(digits = 3, n_rash / n),
-    n_red_eye = sum(red_eye == "Yes", na.rm = TRUE),
-    p_red_eye = round(digits = 3, n_red_eye / n),
+    n_rash  = sum(rash == "Yes", na.rm = TRUE),
+    p_rash  = round(digits = 3, n_rash / n),
+    n_red_eye   = sum(red_eye == "Yes", na.rm = TRUE),
+    p_red_eye   = round(digits = 3, n_red_eye / n),
     n_pneumonia = sum(pneumonia == "Yes with severe signs", na.rm = TRUE),
     p_pneumonia = round(digits = 3, n_pneumonia / n),
     n_encephalitis = sum(encephalitis == "Yes", na.rm = TRUE),
@@ -346,15 +354,15 @@ dist_hosp_length <- epiparameter::epiparameter(
 measles_params <- list(
   "prob_infection" = prob_infection,
   "dist_infect_period" = dist_infect_period,
-  "dist_hosp_out" = dist_hosp_out,
-  "dist_ons_hosp" = dist_ons_hosp,
-  "dist_contact" = dist_contact,
-  "age_str" = age_str,
+  "dist_hosp_out"  = dist_hosp_out,
+  "dist_ons_hosp"  = dist_ons_hosp,
+  "dist_contact"   = dist_contact,
+  "age_str"  = age_str,
   "age_hosp" = age_hosp,
   "under_1_age_str" = under_1_age_str,
-  "sym_prob" = sym_prob,
-  "muac_prob" = muac_prob,
-  "vacc_prob" = vacc_prob,
+  "sym_prob"   = sym_prob,
+  "muac_prob"  = muac_prob,
+  "vacc_prob"  = vacc_prob,
   "doses_prob" = doses_prob
 )
 
