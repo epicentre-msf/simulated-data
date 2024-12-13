@@ -42,6 +42,14 @@ conflicted::conflict_prefer("filter", "dplyr")
 # all params and distributions
 measles_params <- readRDS(here::here("data", "clean", "measles_params.rds"))
 
+
+# Go data: import shapefiles of Chad
+adm1 <- st_read(here::here("data", "gpkg", "GEO-EXPORT-TCD-2024-04-11.gpkg"), 
+                layer = "ADM1")
+adm2 <- st_read(here::here("data", "gpkg", "GEO-EXPORT-TCD-2024-04-11.gpkg"), 
+                layer = "ADM2")
+
+
 # Generate the linelist -------------------------------------------------------
 
 # Build the linelist point after point
@@ -59,7 +67,7 @@ sim_ll <- simulist::sim_linelist(
   onset_to_hosp = measles_params$dist_ons_hosp,
   onset_to_death = measles_params$dist_hosp_out,
   hosp_risk = rename(measles_params$age_hosp, risk = p),
-  outbreak_start_date = as.Date("2022-08-13"),
+  outbreak_start_date = as.Date("2022-01-15"),
   outbreak_size = c(100, 5000),
   population_age = rename(measles_params$age_str, proportion = p)
 ) |>
