@@ -596,7 +596,9 @@ sim_ll <- sim_ll |>
 # make some onset date NA
 
 # random rows id to make NA
-rows_id <- sample(1:nrow(sim_ll), replace = FALSE, size = 300)
+rows_id <- sample(1:nrow(sim_ll), 
+                  replace = FALSE, 
+                  size = nrow(sim_ll)/10)
 
 sim_ll <- sim_ll |>
   mutate(date_onset = case_when(
