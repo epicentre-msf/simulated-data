@@ -52,9 +52,9 @@ measles_params <- readRDS(here::here("data", "clean", "measles_params.rds"))
 # probability of infection upon contact
 
 set.seed(119236)
-sim_ll <- sim_linelist(
+sim_ll <- simulist::sim_linelist(
   contact_distribution = measles_params$dist_contact,
-  infect_period = measles_params$dist_infect_period,
+  infectious_period  = measles_params$dist_infect_period,
   prob_infect = measles_params$prob_infection,
   onset_to_hosp = measles_params$dist_ons_hosp,
   onset_to_death = measles_params$dist_hosp_out,
@@ -513,8 +513,8 @@ sim_ll <- sim_ll |>
   # fix outcome and dates
   mutate(
     date_outcome = case_when(
-      outcome & !is.na(date_death) ~ date_death,
-      outcome & is.na(date_death) ~ date_admission + hosp_length,
+      outcome & !is.na(date_outcome) ~ date_outcome,
+      outcome & is.na(date_outcome) ~ date_admission + hosp_length,
       !outcome ~ date_admission + hosp_length,
       .default = NA
     )
@@ -552,7 +552,9 @@ sim_ll <- sim_ll |>
       )
     )
   ) |>
-  select(-c(hosp_length, p_death, case_type, date_death))
+  select(-c(hosp_length, p_death, case_type, 
+            # date_death
+  ))
 
 
 ## Add hospital data ----------------------------------------
