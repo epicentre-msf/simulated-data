@@ -181,20 +181,20 @@ sim_ll <- sim_ll |>
 # Mandoul region of outbreak
 mandoul <- filter(adm2, adm1_name == "Mandoul")
 
-mapview::mapview(
-  adm2,
-  layer.name = "Adm2",
-  alpha.regions = 0,
-  label = "adm2_name"
-) +
-  mapview::mapview(
-    mandoul,
-    color = "darkred",
-    lxd = 13,
-    alpha.regions = .4,
-    layer.name = "Mandoul",
-    label = "adm2_name"
-  )
+# mapview::mapview(
+#   adm2,
+#   layer.name = "Adm2",
+#   alpha.regions = 0,
+#   label = "adm2_name"
+# ) +
+#   mapview::mapview(
+#     mandoul,
+#     color = "darkred",
+#     lxd = 13,
+#     alpha.regions = .4,
+#     layer.name = "Mandoul",
+#     label = "adm2_name"
+#   )
 
 # probability model of admin level - 2 prob based on dates
 geo_dist <- data.frame(
