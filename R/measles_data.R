@@ -17,8 +17,6 @@
 
 pacman::p_load(
   rio,       # import funcs
-  simulist,  # generate fake linelist
-  epiparameter, # get epi parameters
   fitdistrplus, # fit best distribution
   sf,        # work with spatial data
   fs,        # work with path
@@ -30,12 +28,16 @@ pacman::p_load(
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
-# If pacman fails:
-# install.packages('simulist', 
-# repos = c('https://epiverse-trace.r-universe.dev', 
-#           'https://cloud.r-project.org'))
 
+# For {epiparameter} and {simulist} --------------------------------------
 
+#install manually from the dev version
+# pak::pak("epiverse-trace/simulist")
+# pak::pak("epiverse-trace/epiparameter")
+
+#load manually
+library(epiparameter)
+library(simulist)
 
 ## Paths -----------------------------------------------
 
@@ -47,12 +49,10 @@ path_measles <- fs::dir_ls(here::here(Sys.getenv("SHAREPOINT_PATH"),
                            regex = ".rds") |> 
   max()
 
-
 ## Get data ---------------------------------------
 
 # read data
 dat <- readRDS(path_measles)
-
 
 # Clean data ----------------------
 dat_clean <- dat |>
@@ -104,7 +104,6 @@ dat_chad <- dat_clean |>
 
 # Define parameters -------------------------------------------------------
 
-
 ## Contact distribution --------------------------------
 
 # probability of infection upon contact
@@ -120,7 +119,6 @@ dist_contact <- epiparameter::epiparameter(
     prob_distribution_params = c(mean = 2)
     )
 )
-
 
 ## Onset to hospitalisation ----------------------------
 
@@ -237,7 +235,7 @@ dist_infect_period <- epiparameter::epiparameter(
 age_str <- dat_clean |>
   count(age_range) |>
   na.omit() |>
-  mutate(p = round(n / sum(n), digits = 3)) |>
+  mutate(p = round(n / sum(n), digits = 5)) |>
   select(age_range, p)
 
 # define hospitalisation based on age
@@ -336,7 +334,6 @@ doses_prob <- dat_clean |>
     p = n / sum(n)
   )
 
-
 # Hospital length ------------------------------------------
 dist_hosp_length <- epiparameter::epiparameter(
   disease = "Measles",
@@ -366,11 +363,11 @@ measles_params <- list(
   "doses_prob" = doses_prob
 )
 
-
 purrr::map(measles_params[c("age_str", "under_1_age_str") ], {
   
-  ~ if(sum(.x$p) > 1 ) { stop(glue::glue("probabilities add up to more than 1 ! p : {round(digits = 2, sum(.x$p))}"))
+  ~ if(sum(.x$p) > 1 ) { stop(glue::glue("probabilities add up to more than 1 ! p : {round(digits = 5, sum(.x$p))}"))
   } else {print("all good with probabilities")} 
 })
 
 saveRDS(measles_params, here::here("data", "clean", "measles_params.rds"))
+
