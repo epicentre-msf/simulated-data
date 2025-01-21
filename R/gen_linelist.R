@@ -557,22 +557,6 @@ sim_ll <- sim_ll |>
     prob = c(0.013, 0.737, 0.15, 0.1)
   ))
 
-## Dirty Onset date --------------------------------------------------------------
-# make some onset date NA
-
-# random rows id to make NA
-rows_id <- sample(1:nrow(sim_ll),
-  replace = FALSE,
-  size = nrow(sim_ll) / 10
-)
-
-sim_ll <- sim_ll |>
-  mutate(date_onset = case_when(
-    row_number() %in% rows_id ~ NA,
-    .default = date_onset
-  )) |>
-  select(-c(date_first_contact, date_last_contact))
-
 # Order and save --------------------------------------
 
 # order variables
@@ -584,12 +568,12 @@ sim_ll <- sim_ll |>
     age,
     age_unit,
     age_group,
-    region,
-    sub_prefecture,
+    #region,
+    #sub_prefecture,
     date_onset,
     hospitalisation,
     date_admission,
-    ct_value,
+    #ct_value,
     malaria_rdt,
     fever,
     rash,

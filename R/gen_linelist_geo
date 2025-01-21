@@ -38,13 +38,17 @@ adm2 <- readRDS(here::here(set_paths()$sharepoint_path, "OutbreakTools - GeoBase
 adm4 <- readRDS(here::here(set_paths()$sharepoint_path, "OutbreakTools - GeoBase/TCD/TCD__ALL__20231122__124H/sf/TCD_adm4.rds"))
 
 # health facilities come from the GIS
-hf <- sf::st_read(dsn = fs::path(set_paths()$sharepoint_path, 
-"OutbreakTools - GeoBase", "TCD", "resources", "shp", "GeoMSF", "MasterData", "MasterData.gdb"), 
-layer = "main_owner_hltfac_p_msf")|> select(pcode, name_fr, name_en, local_name, type_name, operated_by)
+hf <- sf::st_read(
+  dsn = fs::path(
+    set_paths()$sharepoint_path,
+    "OutbreakTools - GeoBase", "TCD", "resources", "shp", "GeoMSF", "MasterData", "MasterData.gdb"
+  ),
+  layer = "main_owner_hltfac_p_msf"
+) |> select(pcode, name_fr, name_en, local_name, type_name, operated_by)
 
 # prepare data -----------------------------------------------------------
 mandoul_adm2 <- adm2 |> filter(adm1_name == "Mandoul")
-#mandoul_adm3 <- adm3 |> filter(adm1_name == "Mandoul")
+mandoul_adm3 <- adm3 |> filter(adm1_name == "Mandoul")
 mandoul_adm4 <- adm4 |> filter(adm1_name == "Mandoul")
 
 hf_mandoul <- hf[mandoul_adm2, ]
@@ -53,26 +57,27 @@ hf_mandoul <- hf[mandoul_adm2, ]
 # a map of the admin levels of chad with pop density + health facilities
 
 # the regions are different from Open street map layer
-mapview::mapview( adm1, alpha.regions = 0, label = "adm1_name", lxd = 30, layer.name = "Health facilities")
-mapview::mapview( mandoul_adm2, alpha.regions = 0, label = "adm2_name", lxd = 13, layer.name = "Admin 2")
-mapview::mapview( mandoul_adm4, alpha.regions = 0, label = "adm4_name", lxd = 13, layer.name = "Admin 4") 
+mapview::mapview(adm1, alpha.regions = 0, label = "adm1_name", lxd = 30, layer.name = "Admin 1")
+mapview::mapview(mandoul_adm2, alpha.regions = 0, label = "adm2_name", lxd = 13, layer.name = "Admin 2")
+mapview::mapview(mandoul_adm3, alpha.regions = 0, label = "adm3_name", lxd = 13, layer.name = "Admin 3")
+mapview::mapview(mandoul_adm4, alpha.regions = 0, label = "adm4_name", lxd = 13, layer.name = "Admin 4")
 mapview::mapview(hf_mandoul, label = "name_fr", layer.name = "Health facilities")
 
+mapview::mapview(
+  filter(adm2, adm1_name == "Mandoul"),
+  color = "darkred",
+  lxd = 13,
+  alpha.regions = .4,
+  layer.name = "Mandoul",
+  label = "adm2_name" ) 
 
-  mapview::mapview(
-    filter(adm3, adm1_name == "Mandoul"),
-    color = "darkred",
-    lxd = 13,
-    alpha.regions = .4,
-    layer.name = "Mandoul",
-    label = "adm2_name") + mapview::mapview(
-    filter(adm4, adm1_name == "Mandoul"),
-    color = "darkred",
-    lxd = 13,
-    alpha.regions = .4,
-    layer.name = "Mandoul",
-    label = "adm2_name")
-!
+mapview::mapview(
+  filter(adm4, adm1_name == "Mandoul"),
+  color = "darkred",
+  lxd = 13,
+  alpha.regions = .4,
+  layer.name = "Mandoul",
+  label = "adm4_name" )
 
 
 # !  Add Geographic Variables --------------------------------
