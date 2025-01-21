@@ -66,8 +66,43 @@ ggplot(data = d) +
     y = n
   ))
 
-## Add age variables -------------------------------------------
+epivis::plot_pyramid(sim_ll, 
+  age_col = age, 
+  gender_col = sex,
+  gender_levels = c("f", "m")
+)
 
+
+
+
+# Add name variable ------------------------------------------------------
+# these are listed by ChatGPT 
+
+# Male names vector
+male_names <- c("Mahamat", "Abakar", "Issa", "Adam", "Moussa", 
+                "Idriss", "Souleymane", "Oumar", "Youssouf", 
+                "Ali", "Brahim", "Ahmat", "Salih", "Djamal", "Hassan")
+
+# Female names vector
+female_names <- c("Amina", "Fatima", "Mariam", "Salma", "Halima", 
+                  "Khadija", "Zeinab", "Fadila", "Safia", "Hawa", 
+                  "Noura", "Leila", "Rahma", "Bintou", "Nadja")
+
+# Surnames vector
+surnames <- c("Mahamat", "Abakar", "Idriss", "Oumar", "Moussa", 
+              "Ali", "Brahim", "Hassan", "Adam", "Souleymane", 
+              "Ahmat", "Salih", "Issa", "Youssouf", "Djamal", 
+              "Touka", "Mbaitoloum", "Ngarmbatina", "Ngbadingar", 
+              "Ndjamen", "Djerassem", "Ngardou", "Nodjimbadem", 
+              "Beassem", "Diguel", "Koulamallah", "Tchatchouang", 
+              "Ngarlem", "Djimet", "Malloum")
+
+
+sim_ll <- sim_ll |> 
+  mutate(full_name = paste0( ifelse(sex == "f", sample(female_names), sample(male_names)), " ", sample(surnames) ) ) |> 
+  relocate(full_name, 1)
+
+## Add age variables -------------------------------------------
 sim_ll <- sim_ll |>
   # define age groups based on age structure that was given
   mutate(
@@ -248,6 +283,8 @@ sim_ll <- sim_ll |>
 vacc_cat <- unique(measles_params$vacc_prob$vacci_measles_yn)
 doses_cat <- unique(measles_params$doses_prob$vacci_measles_doses)
 
+max_date <- max(sim_ll$date_onset)
+
 # add vaccination data
 sim_ll <- sim_ll |>
   mutate(
@@ -271,8 +308,23 @@ sim_ll <- sim_ll |>
       ),
       NA
     )
-  )
+  ) 
 
+# Add birth date ---------------------------------------------------------
+# Calculate the birth_date column
+sim_ll$date_birth <- with(sim_ll, {
+  # Subtract years for "years" and months for "months"
+  ifelse(age_unit == "years", date_onset - years(age),
+         ifelse(age_unit == "months", date_onset - months(age), NA) )
+})
+
+
+sim_ll <- sim_ll |> 
+  mutate(
+  # add variation around birth date
+  date_birth = ifelse(age_unit == "months", date_birth - sample(1:31), date_birth - sample(1:365) ), 
+  date_birth = as.Date(date_birth)
+) |> relocate(date_birth, .after = age_group)
 
 ## Improve outcome ------------------------------------------
 

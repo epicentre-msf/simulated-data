@@ -31,7 +31,6 @@ pacman::p_load(
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
-
 # Translate linelist ------------------------------
 
 ## Clean linelist ------------------------------
@@ -134,8 +133,6 @@ sim_clean_fr <- sim_clean |>
 # save the fr clean version
 saveRDS(sim_clean_fr, here::here("data", "clean", "simulated_measles_ll_fr.rds"))
 
-
-
 ## Raw linelist ----------------------------
 
 # Load the raw linelist
@@ -179,7 +176,7 @@ sim_raw_final_fr <- sim_raw_final |>
                                              "yes" ~"oui", 
                                              "no" ~"non", 
                                              .default = `Hospitalisation (oui/non)`), 
-    across(contains("Patient à"), ~ case_match(.x, "Yes" ~"yes", "No" ~"Non", .default = .x)), 
+    across(contains("Patient à"), ~ case_match(.x, "Yes" ~ "yes", "No" ~"Non", .default = .x)), 
     
     `Status de la vaccination` = case_match(`Status de la vaccination`, 
                                             "No" ~"Non", 
