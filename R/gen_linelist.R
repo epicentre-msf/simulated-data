@@ -1,5 +1,3 @@
-
-# ---------------------------
 # Purpose of script: use {simulist} to generate a linelist of a measle outbreak in Moissala (Chad)
 #
 # Author: Hugo Soubrier
@@ -7,14 +5,13 @@
 # Date Created: 2024-11-12
 #
 # Email: hugo.soubrier@epicentre.msf.org
-# ---------------------------
+
 # Notes:
 # the different distributions used in simulist come from measles_data.R
-#
-#
-# ---------------------------
 
-# Load packages ---------------------------
+# Setup ----------------------------------------------------
+
+## Load packages ---------------------------
 
 pacman::p_load(
   rio, # import funcs
@@ -31,20 +28,23 @@ pacman::p_load(
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
-# read measles data
-# dat_clean <- readRDS(here::here("data", "clean", "real_measles_data.rds"))
+source("R/set_paths.R")
+
+## Import data ------------------------------------------------
 
 # all params and distributions
 measles_params <- readRDS(here::here("data", "clean", "measles_params.rds"))
 
 # Generate the linelist -------------------------------------------------------
 
-# probability of infection upon contact
+# Build the linelist point after point
+
+## Initialise ---------------------------------------
 
 set.seed(119236)
-sim_ll <- sim_linelist(
+sim_ll <- simulist::sim_linelist(
   contact_distribution = measles_params$dist_contact,
-  infect_period = measles_params$dist_infect_period,
+  infectious_period = measles_params$dist_infect_period,
   prob_infect = measles_params$prob_infection,
   onset_to_hosp = measles_params$dist_ons_hosp,
   onset_to_death = measles_params$dist_hosp_out,
@@ -55,17 +55,19 @@ sim_ll <- sim_linelist(
 ) |>
   as_tibble()
 
-# Plot 
-d <- sim_ll |> 
-  mutate(epiweek = floor_date(date_onset, unit = "week")) |> 
+# Plot
+d <- sim_ll |>
+  mutate(epiweek = floor_date(date_onset, unit = "week")) |>
   count(epiweek)
 
-ggplot(data = d)+
-  geom_col(aes(x = epiweek, 
-               y = n)
-           )
+ggplot(data = d) +
+  geom_col(aes(
+    x = epiweek,
+    y = n
+  ))
 
-# Age variables -----------------------------------------------------------
+## Add age variables -------------------------------------------
+
 sim_ll <- sim_ll |>
   # define age groups based on age structure that was given
   mutate(
@@ -88,7 +90,7 @@ sim_ll <- sim_ll |>
       ),
       age_group
     ),
-    
+
     # give realistic age to under 1
     age = case_when(
       age_group == "< 6 months" ~ sample(1:5, nrow(sim_ll), replace = TRUE),
@@ -117,12 +119,16 @@ sim_ll <- sim_ll |>
     ),
     # variable about hospitalisation
     # hospitalisation = if_else(is.na(date_admission), "no", "yes"),
-    hospitalisation = sample(c(NA, "yes"), size = nrow(sim_ll), replace = TRUE, prob = c(.05, .95)),
+    hospitalisation = sample(c(NA, "yes"),
+      size = nrow(sim_ll),
+      replace = TRUE, prob = c(.05, .95)
+    ),
   ) |>
   relocate(c(age, age_unit, age_group), .after = "sex") |>
   relocate(hospitalisation, .before = date_admission)
 
-# Plots -------------------------------------------------------------------
+
+# Plots
 ggplot(data = sim_ll) +
   geom_histogram(
     aes(
@@ -140,12 +146,16 @@ ggplot(data = sim_ll) +
       fill = hospitalisation
     ),
     binwidth = 7
-  )
+  ) +
+  scale_x_date(date_breaks = "1 month") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
 
-# Dates variable ----------------------------------------------------------
+
+## Dates variable -------------------------------------------
+
 # we will make all cases hospitalised despite the output of sim_lists
-
 sim_ll <- sim_ll |>
+  mutate(across(contains("date_"), ~ floor_date(.x, unit = "day"))) |> 
   mutate(date_admission = case_when(
     is.na(date_admission) ~ date_onset + sample(
       c(1:5, NA),
@@ -156,73 +166,8 @@ sim_ll <- sim_ll |>
     .default = date_admission
   ))
 
-# Add Geographic Variables -----------------------------------------------------------
 
-# import shapefiles of Chad
-adm1 <- st_read(here::here("data", "gpkg", "GEO-EXPORT-TCD-2024-04-11.gpkg"), layer = "ADM1")
-adm2 <- st_read(here::here("data", "gpkg", "GEO-EXPORT-TCD-2024-04-11.gpkg"), layer = "ADM2")
-
-# Mandoul region of outbreak
-mandoul <- filter(adm2, adm1_name == "Mandoul")
-
-mapview::mapview(
-  adm2,
-  layer.name = "Adm2",
-  alpha.regions = 0,
-  label = "adm2_name"
-) +
-  mapview::mapview(
-    mandoul,
-    color = "darkred",
-    lxd = 13,
-    alpha.regions = .4,
-    layer.name = "Mandoul",
-    label = "adm2_name"
-  )
-
-# probability model of admin level - 2 prob based on dates
-geo_dist <- data.frame(
-  region = c("Mandoul", "Mandoul", "Mandoul", "Moyen Chari", "Moyen Chari", "Mandoul"),
-  sub_prefecture = c("Moissala", "Bouna", "Bekourou", "Danamadji", "Koumogo", "Bedaya"),
-  p = c(.25, .26, .21, .19, .01, 0.08),
-  p2 = c(.65, .16, .01, .00, .00, 0.18)
-)
-
-sim_ll <- sim_ll |>
-  mutate(
-    sub_prefecture = case_when(
-      date_onset < "2023-03-01" ~ sample(
-        geo_dist$sub_prefecture,
-        replace = TRUE,
-        prob = geo_dist$p,
-        size = nrow(sim_ll)
-      ),
-      .default = sample(
-        geo_dist$sub_prefecture,
-        replace = TRUE,
-        prob = geo_dist$p2,
-        size = nrow(sim_ll)
-      )
-    )
-  ) |>
-  left_join(select(geo_dist, region, sub_prefecture))
-
-
-# Quick choropleth map
-chor <- left_join(
-  adm2,
-  count(sim_ll, region, sub_prefecture),
-  by = c("adm2_name" = "sub_prefecture")
-) |>
-  mutate(AR = round(digits = 3, n / adm2_pop * 1000))
-
-mapview::mapview(
-  chor,
-  zcol = "n",
-  label = "adm2_name"
-)
-
-# Add Symptoms variables  ----------------------------------------------------
+## Add Symptoms variables  ----------------------------------------------------
 
 sim_ll <- sim_ll |>
   # join the symptoms distributions
@@ -237,7 +182,8 @@ sim_ll <- sim_ll |>
   ) |>
   select(-contains("p_"))
 
-# Malnutrition
+
+## Add malnutrition ---------------------------------------------
 muac_cat <- unique(measles_params$muac_prob$muac_adm)
 
 # Add malnutrition variable
@@ -284,7 +230,7 @@ sim_ll <- sim_ll |>
         prob = filter(measles_params$muac_prob, age_group == "15+ years")$p
       )
     ),
-    
+
     # distribute a muac value
     muac = case_when(
       muac_cat == "Green (125+ mm)" ~ sample(125:250, replace = TRUE, size = nrow(sim_ll)),
@@ -297,7 +243,8 @@ sim_ll <- sim_ll |>
     )
   )
 
-# Vaccination status
+
+## Add vaccination status -----------------------------------
 vacc_cat <- unique(measles_params$vacc_prob$vacci_measles_yn)
 doses_cat <- unique(measles_params$doses_prob$vacci_measles_doses)
 
@@ -327,7 +274,9 @@ sim_ll <- sim_ll |>
   )
 
 
-# Build logit model for death  --------------------------------------------
+## Improve outcome ------------------------------------------
+
+### Build logit model for death  ----------------------------
 
 # regression coef (log scale)
 
@@ -360,8 +309,7 @@ logit_death <- function(
     reg_vacc,
     reg_muac_2,
     reg_muac_3,
-    error
-) {
+    error) {
   logit <- reg_age_1 * 2.4 +
     reg_age_2 * 2.1 +
     reg_age_3 * 2.1 +
@@ -404,6 +352,7 @@ p_death <- sim_ll |>
   ) |>
   select(contains("reg_"))
 
+### Add deaths and change outcome ---------------------------
 sim_ll <- sim_ll |>
   bind_cols("p_death" = p_death$reg_p_death) |>
   mutate(
@@ -414,7 +363,8 @@ sim_ll <- sim_ll |>
 # prop of deaths generated
 sim_ll |> tabyl(outcome)
 
-# Test the Log regression -------------------------------------------------
+
+### Test the Log regression -------------------------------------------------
 prep_ll <- sim_ll |>
   mutate(
     age_group = fct_relevel(
@@ -453,7 +403,9 @@ prep_ll <- sim_ll |>
   )
 
 # fit the logistic regression
-mdl <- glm(outcome ~ fever + age_group + vacc_status + muac_cat, data = prep_ll, family = "binomial")
+mdl <- glm(outcome ~ fever + age_group + vacc_status + muac_cat,
+  data = prep_ll, family = "binomial"
+)
 
 # view coeff
 gtsummary::tbl_regression(
@@ -461,9 +413,10 @@ gtsummary::tbl_regression(
   exp = TRUE
 )
 
-# Hospital exit -----------------------------------------------------------
+## Add hospital exit -----------------------------------------------------------
 
 # randomly allocate a hospital length using a gamma
+
 # hosp_length <- dat_clean |>
 #   filter(hospitalised_yn == "Yes") |>
 #   drop_na(date_hospitalisation_end) |>
@@ -476,27 +429,42 @@ gtsummary::tbl_regression(
 #   geom_density(aes(x = delay), binwidth = 1) +
 #   stat_function(fun = dgamma, args = list(shape = 2.2251860, rate = 0.8541434))
 
-# allocate hospital lenght
+# allocate hospital length
 sim_ll <- sim_ll |>
   mutate(hosp_length = if_else(
     hospitalisation == "yes",
-    round(digits = 0, rgamma(nrow(sim_ll), shape = 2.2251860, rate = 0.8541434)),
+    round(digits = 0, rgamma(nrow(sim_ll),
+      shape = 2.2251860,
+      rate = 0.8541434
+    )),
     NA
   )) |>
   # fix outcome and dates
   mutate(
     date_outcome = case_when(
-      outcome & !is.na(date_death) ~ date_death,
-      outcome & is.na(date_death) ~ date_admission + hosp_length,
+      outcome & !is.na(date_outcome) ~ date_outcome,
+      outcome & is.na(date_outcome) ~ date_admission + hosp_length,
       !outcome ~ date_admission + hosp_length,
       .default = NA
     )
   ) |>
   # add some variability to outcome
   mutate(outcome = case_when(
-    outcome & hospitalisation == "yes" ~ sample(c("dead", "left against medical advice", NA), size = nrow(sim_ll), prob = c(.85, .02, .03), replace = TRUE),
-    outcome & hospitalisation == "no" ~ sample(c("dead", NA), size = nrow(sim_ll), prob = c(.98, .02), replace = TRUE),
-    !outcome ~ sample(c("recovered", "left against medical advice", NA), size = nrow(sim_ll), prob = c(.85, .02, .03), replace = TRUE)
+    outcome & hospitalisation == "yes" ~ sample(c("dead", "left against medical advice", NA),
+      size = nrow(sim_ll),
+      prob = c(.85, .02, .03),
+      replace = TRUE
+    ),
+    outcome & hospitalisation == "no" ~ sample(c("dead", NA),
+      size = nrow(sim_ll),
+      prob = c(.98, .02),
+      replace = TRUE
+    ),
+    !outcome ~ sample(c("recovered", "left against medical advice", NA),
+      size = nrow(sim_ll),
+      prob = c(.85, .02, .03),
+      replace = TRUE
+    )
   )) |>
   # create epi classification
   mutate(
@@ -516,29 +484,12 @@ sim_ll <- sim_ll |>
       )
     )
   ) |>
-  select(-c(hosp_length, p_death, case_type, date_death))
+  select(-c(
+    hosp_length, p_death, case_type,
+    # date_death
+  ))
 
-
-# Hospital data -----------------------------------------------------------
-
-# Add hospitals
-
-sim_ll <- sim_ll |>
-  mutate(site = case_when(
-    sub_prefecture == "Moissala" ~ "Moïssala Hospital",
-    sub_prefecture == "Danamadji" ~ "Danamadji Hospital",
-    sub_prefecture == "Bedaya" ~ "Bedaya Hospital",
-    sub_prefecture == "Bekourou" ~ "Bekourou Hospital",
-    sub_prefecture == "Bouna" ~ "Bouna Hospital",
-    sub_prefecture == "Koumogo" ~ "Koumogo Hospital",
-  )) |>
-  relocate(site, .after = id)
-
-ggplot(data = sim_ll) +
-  geom_histogram(aes(x = date_onset)) +
-  facet_wrap(~site)
-
-# RDT Malaria  -----------------------------------------------------------
+## Add RDT Malaria  -----------------------------------------------------------
 
 # incidence of Malaria in Moissala
 # 684 cases per 1000 in 2021
@@ -554,11 +505,14 @@ sim_ll <- sim_ll |>
     prob = c(0.013, 0.737, 0.15, 0.1)
   ))
 
-# Onset date --------------------------------------------------------------
+## Dirty Onset date --------------------------------------------------------------
 # make some onset date NA
 
 # random rows id to make NA
-rows_id <- sample(1:nrow(sim_ll), replace = FALSE, size = 300)
+rows_id <- sample(1:nrow(sim_ll),
+  replace = FALSE,
+  size = nrow(sim_ll) / 10
+)
 
 sim_ll <- sim_ll |>
   mutate(date_onset = case_when(
@@ -567,40 +521,42 @@ sim_ll <- sim_ll |>
   )) |>
   select(-c(date_first_contact, date_last_contact))
 
+# Order and save --------------------------------------
+
 # order variables
-sim_ll <- sim_ll |> select(
-  id,
-  site,
-  case_name,
-  sex,
-  age,
-  age_unit,
-  age_group,
-  region,
-  sub_prefecture,
-  date_onset,
-  hospitalisation,
-  date_admission,
-  ct_value,
-  malaria_rdt,
-  fever,
-  rash,
-  cough,
-  red_eye,
-  pneumonia,
-  encephalitis,
-  muac,
-  muac_cat,
-  vacc_status,
-  vacc_doses,
-  outcome,
-  date_outcome,
-  epi_classification
-)
+sim_ll <- sim_ll |>
+  select(
+    id,
+    case_name,
+    sex,
+    age,
+    age_unit,
+    age_group,
+    region,
+    sub_prefecture,
+    date_onset,
+    hospitalisation,
+    date_admission,
+    ct_value,
+    malaria_rdt,
+    fever,
+    rash,
+    cough,
+    red_eye,
+    pneumonia,
+    encephalitis,
+    muac,
+    muac_cat,
+    vacc_status,
+    vacc_doses,
+    outcome,
+    date_outcome,
+    epi_classification
+  )
 
 export(sim_ll, here::here("data", "clean", "simulated_measles_ll.rds"))
 
-# Save shapefiles as .rds -------------------------------------------------
+## Save shapefiles as .rds ----------------------------
 
-write_rds(adm1, "data/gpkg/chad_adm1.rds")
-write_rds(adm2, "data/gpkg/chad_adm2.rds")
+#write_rds(adm1, "data/gpkg/chad_adm1.rds")
+#write_rds(adm2, "data/gpkg/chad_adm2.rds")
