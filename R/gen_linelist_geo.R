@@ -21,8 +21,6 @@ source("R/set_paths.R")
 
 #  Tasks -----------------------------------------------------------------
 
-# TODO assign adm2
-# TODO assign adm3
 # TODO assign adm4
 # TODO assign coordinates
 # TODO assign Health facilities
@@ -34,7 +32,7 @@ sim_ll <- readRDS(here::here("data", "clean", "simulated_measles_ll.rds"))
 # admin levels come from the geobase
 adm1 <- readRDS(here::here(set_paths()$sharepoint_path, "OutbreakTools - GeoBase/TCD/TCD__ALL__20231122__124H/sf/TCD_adm1.rds"))
 adm2 <- readRDS(here::here(set_paths()$sharepoint_path, "OutbreakTools - GeoBase/TCD/TCD__ALL__20231122__124H/sf/TCD_adm2.rds"))
-#adm3 <- readRDS(here::here(set_paths()$sharepoint_path, "OutbreakTools - GeoBase/TCD/TCD__ALL__20231122__124H/sf/TCD_adm3.rds"))
+# adm3 <- readRDS(here::here(set_paths()$sharepoint_path, "OutbreakTools - GeoBase/TCD/TCD__ALL__20231122__124H/sf/TCD_adm3.rds"))
 adm4 <- readRDS(here::here(set_paths()$sharepoint_path, "OutbreakTools - GeoBase/TCD/TCD__ALL__20231122__124H/sf/TCD_adm4.rds"))
 
 # health facilities come from the GIS
@@ -44,11 +42,12 @@ hf <- sf::st_read(
     "OutbreakTools - GeoBase", "TCD", "resources", "shp", "GeoMSF", "MasterData", "MasterData.gdb"
   ),
   layer = "main_owner_hltfac_p_msf"
-) |> select(pcode, name_fr, name_en, local_name, type_name, operated_by)
+) |>
+  select(pcode, name_fr, name_en, local_name, type_name, operated_by)
 
 # prepare data -----------------------------------------------------------
 mandoul_adm2 <- adm2 |> filter(adm1_name == "Mandoul")
-mandoul_adm3 <- adm3 |> filter(adm1_name == "Mandoul")
+# mandoul_adm3 <- adm3 |> filter(adm1_name == "Mandoul")
 mandoul_adm4 <- adm4 |> filter(adm1_name == "Mandoul")
 
 hf_mandoul <- hf[mandoul_adm2, ]
@@ -57,27 +56,11 @@ hf_mandoul <- hf[mandoul_adm2, ]
 # a map of the admin levels of chad with pop density + health facilities
 
 # the regions are different from Open street map layer
-mapview::mapview(adm1, alpha.regions = 0, label = "adm1_name", lxd = 30, layer.name = "Admin 1")
-mapview::mapview(mandoul_adm2, alpha.regions = 0, label = "adm2_name", lxd = 13, layer.name = "Admin 2")
-mapview::mapview(mandoul_adm3, alpha.regions = 0, label = "adm3_name", lxd = 13, layer.name = "Admin 3")
-mapview::mapview(mandoul_adm4, alpha.regions = 0, label = "adm4_name", lxd = 13, layer.name = "Admin 4")
-mapview::mapview(hf_mandoul, label = "name_fr", layer.name = "Health facilities")
-
-mapview::mapview(
-  filter(adm2, adm1_name == "Mandoul"),
-  color = "darkred",
-  lxd = 13,
-  alpha.regions = .4,
-  layer.name = "Mandoul",
-  label = "adm2_name" ) 
-
-mapview::mapview(
-  filter(adm4, adm1_name == "Mandoul"),
-  color = "darkred",
-  lxd = 13,
-  alpha.regions = .4,
-  layer.name = "Mandoul",
-  label = "adm4_name" )
+# mapview::mapview(adm1, alpha.regions = 0, label = "adm1_name", lxd = 30, layer.name = "Admin 1")
+# mapview::mapview(mandoul_adm2, alpha.regions = 0, label = "adm2_name", lxd = 13, layer.name = "Admin 2")
+# mapview::mapview(mandoul_adm3, alpha.regions = 0, label = "adm3_name", lxd = 13, layer.name = "Admin 3")
+# mapview::mapview(mandoul_adm4, alpha.regions = 0, label = "adm4_name", lxd = 13, layer.name = "Admin 4")
+# mapview::mapview(hf_mandoul, label = "name_fr", layer.name = "Health facilities")
 
 
 # !  Add Geographic Variables --------------------------------
@@ -135,7 +118,6 @@ date_prob <- data.frame(
     )
   )
 
-
 # assign the admin2 based on probability
 sim_ll <- sim_ll |>
   mutate(date_onset = floor_date(date_onset, unit = "day")) |>
@@ -144,11 +126,12 @@ sim_ll <- sim_ll |>
     relationship = "many-to-many"
   ) |>
   summarise(
-    .by = c(id, case_name, case_type, sex, age, age_unit, age_group, date_onset, hospitalisation, date_admission, outcome, date_outcome, date_first_contact, date_last_contact, ct_value),
+    .by = 1:23,
     region = "Mandoul",
     sub_prefecture = sample(sub_prefecture, probability, size = 1, replace = TRUE)
   )
 
+# visualise
 ggplot(data = sim_ll) +
   geom_histogram(
     aes(
@@ -163,10 +146,112 @@ ggplot(data = sim_ll) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
 
 
-## Add hospital data ----------------------------------------
+
+# Distribute cases in right village based on the admin 2 + the epicenters buffer ----
+
+# define an epicenter point for each region - then draw a circle around and distribute points in villages around
+epicenters <- data.frame(
+  adm2 = c("moissala", "bouna", "goundi", "koumra", "bedaya", "bedjondo", "bekourou"),
+  epicentre_lat = c(8.34323, 8.41733011558516, 9.367655329026066, 8.908874493461946, 8.914899975059113, 8.672119168423363, 8.152893079978664),
+  epicentre_lon = c(17.76326, 17.431073086773843, 17.413761518489963, 17.51068115843181, 17.8531999727768, 17.362304716154775, 17.548522959269945),
+  radius = 40
+)
+
+# make epicenters as sf
+epi_sf <- epicenters |> st_as_sf(
+  coords = c("epicentre_lon", "epicentre_lat"),
+  crs = raster::crs(adm4)
+)
+
+# add a ~ 20km buffer
+buffer <- st_buffer(epi_sf, dist = 10000)
+
+# visualise
+mapview::mapview(
+  filter(adm2, adm1_name == "Mandoul"),
+  color = "darkred",
+  alpha.regions = 0,
+  layer.name = "Admin2",
+  label = "adm2_name"
+  # fill = FALSE
+) +
+  mapview::mapview(
+    filter(adm4, adm1_name == "Mandoul"),
+    color = "green",
+    lxd = 0,
+    layer.name = "Villages",
+    alpha.regions = 1,
+    label = "adm4_name"
+  ) +
+
+  mapview::mapview(
+    buffer,
+    color = "red",
+    lxd = 0,
+    layer.name = "Epicenters",
+    alpha.regions = 1
+  )
+
+
+# get all villages and health zone that fall within each buffer zone
+within_epi <- st_intersection(adm4, buffer)
+
+mapview::mapview(within_epi)
+
+#list of villages for each admin2
+villages <- within_epi |> 
+  distinct(adm2, adm4_name) |> 
+  group_by(adm2) |> 
+  summarise(adm4_names = list(adm4_name)) 
+
+
+# Join the linelist with the villages list, and then randomly assign an `adm4_name`
+sim_ll <- sim_ll |> 
+  left_join(villages, by = join_by( "sub_prefecture" == "adm2") ) |> 
+  mutate(village_commune = sapply(adm4_names, function(villages) sample(villages, 1)) ) |>  
+  select(-adm4_names) |> 
+  relocate(c(region, sub_prefecture, village_commune), .after = age_group)
+
+## Add Health facility data ----------------------------------------
+
+  mapview::mapview(
+    hf,
+  color = "green",
+  lxd = 0,
+  layer.name = "Villages",
+  alpha.regions = 1,
+  label = "adm4_name"
+) +
+  mapview::mapview(
+    buffer,
+    color = "red",
+    lxd = 0,
+    layer.name = "Epicenters",
+    alpha.regions = 1
+  )
+
+# keep hospitals that fall in the buffer zones 
+# get all villages and health zone that fall within each buffer zone
+hf_within_epi <- st_intersection(hf, buffer)
+
+#now each village in epicenters gets assigned the closest health facility
+
+#calculate distances between HF and villages
+distances <- st_distance(within_epi, hf_within_epi) 
+    
+# Find the index of the closest point for each point in village
+closest_indices <- apply(distances, 1, which.min)  # Get index of closest point for each village point
+
+# Assign the closest point from HF to each point in village
+closest_points <- hf_within_epi[closest_indices, ]
+
+# Combine results into a new dataframe (optional)
+result <- data.frame(
+  village_point = 1:nrow(within_epi),
+  closest_hf = closest_indices
+)
 
 # Add hospitals
-
 sim_ll <- sim_ll |>
   mutate(site = case_when(
     sub_prefecture == "Moissala" ~ "Moïssala Hospital",
