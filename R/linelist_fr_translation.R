@@ -56,8 +56,8 @@ sim_clean_fr <- sim_clean |>
     encephalite = encephalitis,
     pb = muac,
     pb_cat = muac_cat,
-    statut_sortie = outcome,
-    date_statut_sortie = date_outcome,
+    statut_sortie = outcome, 
+    date_sortie = date_outcome, 
     classification_epi = epi_classification
   ) |>
   # recode values
@@ -301,7 +301,7 @@ get_cat_values <- function(x) {
 get_n_NA <- function(x) {
   x |>
     mutate(across(everything(), ~ as.character(.x))) |>
-    pivot_longer(,
+    pivot_longer(
       cols = everything(),
       names_to = "variable_name",
       values_to = "values"
