@@ -207,10 +207,8 @@ sim_raw_final_fr <- sim_raw_final |>
     `Date de début des symptomes` = ymd(`Date de début des symptomes`)
   )
 # save the raw data
-saveRDS(sim_raw_final_fr, here::here("data", "final", "msf_listelineaire_rougeole_2023-09-24_fr.xlsx"))
-
-# To csv
-export(sim_raw_final_fr, here::here("data", "final", "msf_listelineaire_rougeole_2023-09-24_fr.csv"))
+saveRDS(sim_raw_final_fr, here::here("data", "final", "xlsx", "msf_listelineaire_rougeole_2023-09-24_fr.xlsx"))
+saveRDS(sim_raw_final_fr, here::here("data", "final", "csv", "msf_listelineaire_rougeole_2023-09-24_fr.csv"))
 
 # Translate lab data --------------------------------------------------------------
 
@@ -240,7 +238,7 @@ saveRDS(lab_clean_fr, here::here("data", "clean", "simulated_measles_lab_data_fr
 ## Raw data ------------------------------------------------
 
 # import raw lab data
-lab_raw <- import(here::here("data", "final", "msf_laboratory_moissala_2023-09-24.xlsx")) |> as_tibble()
+lab_raw <- import(here::here("data", "final", "xlsx", "msf_laboratory_moissala_2023-09-24.xlsx")) |> as_tibble()
 
 lab_raw_fr <- lab_raw |>
   rename(
@@ -259,7 +257,7 @@ lab_raw_fr <- lab_raw |>
     )
   )
 
-export(lab_raw_fr, here::here("data", "final", "msf_laboratoire_moissala_2023-09-24_fr.xlsx"))
+export(lab_raw_fr, here::here("data", "final",  "xlsx", "msf_laboratoire_moissala_2023-09-24_fr.xlsx"))
 
 # Dirtiness dictionnary --------------------------------------------------
 # Create the variable and dirtiness dictionary

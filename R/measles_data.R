@@ -235,7 +235,7 @@ dist_infect_period <- epiparameter::epiparameter(
 age_str <- dat_clean |>
   count(age_range) |>
   na.omit() |>
-  mutate(p = round(n / sum(n), digits = 5)) |>
+  mutate(p = round(n / sum(n), digits = 3)) |>
   select(age_range, p)
 
 # define hospitalisation based on age
@@ -370,4 +370,3 @@ purrr::map(measles_params[c("age_str", "under_1_age_str") ], {
 })
 
 saveRDS(measles_params, here::here("data", "clean", "measles_params.rds"))
-
