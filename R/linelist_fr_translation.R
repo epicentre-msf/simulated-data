@@ -61,7 +61,7 @@ sim_clean_fr <- sim_clean |>
     pb = muac, 
     pb_cat = muac_cat,
     statut_sortie = outcome, 
-    date_statut_sortie = date_outcome, 
+    date_sortie = date_outcome, 
     classification_epi = epi_classification
     
   ) |>
