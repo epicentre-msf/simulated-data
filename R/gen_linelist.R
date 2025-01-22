@@ -53,7 +53,9 @@ sim_ll <- simulist::sim_linelist(
   outbreak_size = c(100, 5000),
   population_age = rename(measles_params$age_str, proportion = p)
 ) |>
-  as_tibble()
+  as_tibble() |> 
+  # remove useless variables
+  select(-c(date_first_contact, date_last_contact, ct_value, case_name, case_type))
 
 # Plot
 d <- sim_ll |>
@@ -66,8 +68,39 @@ ggplot(data = d) +
     y = n
   ))
 
-## Add age variables -------------------------------------------
+epivis::plot_pyramid(sim_ll, 
+  age_col = age, 
+  gender_col = sex,
+  gender_levels = c("f", "m")
+)
 
+# Add name variable ------------------------------------------------------
+# these are listed by ChatGPT 
+
+# Male names vector
+male_names <- c("Mahamat", "Abakar", "Issa", "Adam", "Moussa", 
+                "Idriss", "Souleymane", "Oumar", "Youssouf", 
+                "Ali", "Brahim", "Ahmat", "Salih", "Djamal", "Hassan")
+
+# Female names vector
+female_names <- c("Amina", "Fatima", "Mariam", "Salma", "Halima", 
+                  "Khadija", "Zeinab", "Fadila", "Safia", "Hawa", 
+                  "Noura", "Leila", "Rahma", "Bintou", "Nadja")
+
+# Surnames vector
+surnames <- c("Mahamat", "Abakar", "Idriss", "Oumar", "Moussa", 
+              "Ali", "Brahim", "Hassan", "Adam", "Souleymane", 
+              "Ahmat", "Salih", "Issa", "Youssouf", "Djamal", 
+              "Touka", "Mbaitoloum", "Ngarmbatina", "Ngbadingar", 
+              "Ndjamen", "Djerassem", "Ngardou", "Nodjimbadem", 
+              "Beassem", "Diguel", "Koulamallah", "Tchatchouang", 
+              "Ngarlem", "Djimet", "Malloum")
+
+sim_ll <- sim_ll |> 
+  mutate(full_name = paste0( ifelse(sex == "f", sample(female_names), sample(male_names)), " ", sample(surnames) ) ) |> 
+  relocate(full_name, 1)
+
+## Add age variables -------------------------------------------
 sim_ll <- sim_ll |>
   # define age groups based on age structure that was given
   mutate(
@@ -90,7 +123,6 @@ sim_ll <- sim_ll |>
       ),
       age_group
     ),
-
     # give realistic age to under 1
     age = case_when(
       age_group == "< 6 months" ~ sample(1:5, nrow(sim_ll), replace = TRUE),
@@ -116,56 +148,34 @@ sim_ll <- sim_ll |>
         "5 - 14 years",
         "15+ years"
       )
-    ),
-    # variable about hospitalisation
-    # hospitalisation = if_else(is.na(date_admission), "no", "yes"),
-    hospitalisation = sample(c(NA, "yes"),
-      size = nrow(sim_ll),
-      replace = TRUE, prob = c(.05, .95)
-    ),
+    )
   ) |>
-  relocate(c(age, age_unit, age_group), .after = "sex") |>
+  relocate(c(age, age_unit, age_group), .after = "sex") 
+
+
+# Add hospitalisation data -----------------------------------------------
+
+sim_ll <- sim_ll |> 
+  mutate(
+    # variable about hospitalisation
+    hospitalisation = if_else(is.na(date_admission), sample(c(NA, "no"), size = nrow(sim_ll), replace = TRUE, prob = c(.05, .95)), "yes"),
+    # hospitalisation = sample(c(NA, "yes"),
+    #   size = nrow(sim_ll),
+    #   replace = TRUE, prob = c(.05, .95)
+    # ) 
+  ) |> 
   relocate(hospitalisation, .before = date_admission)
 
+sim_ll |> tabyl(hospitalisation)
 
 # Plots
-ggplot(data = sim_ll) +
-  geom_histogram(
-    aes(
-      x = date_onset,
-      fill = age_group
-    ),
-    binwidth = 7
-  ) +
-  scale_x_date(breaks = "1 month")
 
-ggplot(data = sim_ll) +
-  geom_histogram(
-    aes(
-      x = date_onset,
-      fill = hospitalisation
-    ),
-    binwidth = 7
-  ) +
-  scale_x_date(date_breaks = "1 month") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-
-
-## Dates variable -------------------------------------------
-
-# we will make all cases hospitalised despite the output of sim_lists
-sim_ll <- sim_ll |>
-  mutate(across(contains("date_"), ~ floor_date(.x, unit = "day"))) |> 
-  mutate(date_admission = case_when(
-    is.na(date_admission) ~ date_onset + sample(
-      c(1:5, NA),
-      size = nrow(sim_ll),
-      replace = TRUE,
-      prob = c(.2, .2, .2, .2, .19, .01)
-    ),
-    .default = date_admission
-  ))
-
+epivis::plot_pyramid(sim_ll, 
+  age_col = age_group, 
+  make_age_groups = FALSE,
+  gender_col = sex,
+  gender_levels = c("f", "m")
+)
 
 ## Add Symptoms variables  ----------------------------------------------------
 
@@ -181,7 +191,6 @@ sim_ll <- sim_ll |>
     encephalitis = rbinom(n = nrow(sim_ll), size = 1, prob = p_encephalitis),
   ) |>
   select(-contains("p_"))
-
 
 ## Add malnutrition ---------------------------------------------
 muac_cat <- unique(measles_params$muac_prob$muac_adm)
@@ -243,10 +252,11 @@ sim_ll <- sim_ll |>
     )
   )
 
-
 ## Add vaccination status -----------------------------------
 vacc_cat <- unique(measles_params$vacc_prob$vacci_measles_yn)
 doses_cat <- unique(measles_params$doses_prob$vacci_measles_doses)
+
+max_date <- max(sim_ll$date_onset)
 
 # add vaccination data
 sim_ll <- sim_ll |>
@@ -271,8 +281,23 @@ sim_ll <- sim_ll |>
       ),
       NA
     )
-  )
+  ) 
 
+# Add birth date ---------------------------------------------------------
+# Calculate the birth_date column
+sim_ll$date_birth <- with(sim_ll, {
+  # Subtract years for "years" and months for "months"
+  ifelse(age_unit == "years", date_onset - years(age),
+         ifelse(age_unit == "months", date_onset - months(age), NA) )
+})
+
+
+sim_ll <- sim_ll |> 
+  mutate(
+  # add variation around birth date
+  date_birth = ifelse(age_unit == "months", date_birth - sample(1:31), date_birth - sample(1:365) ), 
+  date_birth = as.Date(date_birth)
+) |> relocate(date_birth, .after = age_group)
 
 ## Improve outcome ------------------------------------------
 
@@ -362,7 +387,6 @@ sim_ll <- sim_ll |>
 
 # prop of deaths generated
 sim_ll |> tabyl(outcome)
-
 
 ### Test the Log regression -------------------------------------------------
 prep_ll <- sim_ll |>
@@ -485,9 +509,7 @@ sim_ll <- sim_ll |>
     )
   ) |>
   select(-c(
-    hosp_length, p_death, case_type,
-    # date_death
-  ))
+    hosp_length, p_death  ))
 
 ## Add RDT Malaria  -----------------------------------------------------------
 
@@ -505,39 +527,20 @@ sim_ll <- sim_ll |>
     prob = c(0.013, 0.737, 0.15, 0.1)
   ))
 
-## Dirty Onset date --------------------------------------------------------------
-# make some onset date NA
-
-# random rows id to make NA
-rows_id <- sample(1:nrow(sim_ll),
-  replace = FALSE,
-  size = nrow(sim_ll) / 10
-)
-
-sim_ll <- sim_ll |>
-  mutate(date_onset = case_when(
-    row_number() %in% rows_id ~ NA,
-    .default = date_onset
-  )) |>
-  select(-c(date_first_contact, date_last_contact))
-
 # Order and save --------------------------------------
 
 # order variables
 sim_ll <- sim_ll |>
   select(
     id,
-    case_name,
+    full_name,
     sex,
     age,
     age_unit,
     age_group,
-    region,
-    sub_prefecture,
     date_onset,
     hospitalisation,
     date_admission,
-    ct_value,
     malaria_rdt,
     fever,
     rash,
