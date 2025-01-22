@@ -131,11 +131,7 @@ saveRDS(sim_clean_fr, here::here("data", "clean", "simulated_measles_ll_fr.rds")
 
 # Load the raw linelist
 
-sim_raw_final <- import(here::here(
-  "data",
-  "final",
-  "msf_linelist_moissala_2023-09-24.xlsx"
-)) |> as_tibble()
+sim_raw_final <- import(here::here("data", "final", "xlsx", "msf_linelist_moissala_2023-09-24.xlsx" )) |> as_tibble()
 
 sim_raw_final_fr <- sim_raw_final |>
   rename(

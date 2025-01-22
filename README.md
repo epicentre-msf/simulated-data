@@ -17,4 +17,6 @@ To replicate the data:
 5. `make_raw_linelist.R` takes both the *simulated linelist* and the *laboratory data* to add some **dirtiness** and change the columns names. The data are then exported to `.xlsx` and `.csv`. A variable dictionnary summarising clean/raw data names, categorical values and number of missing values is also created and saved in `data/dictionnary/`
 6. `linelist_fr_translation` translates both the clean and the raw data to french (variable names and categorical values), and creates the relevant variable dictionnary. 
 
+7. Because these data are used in the `{repicentre}` repository, you can run `copy_data_to_repicentre.R` to copy the latest data in the repository.
+
 
