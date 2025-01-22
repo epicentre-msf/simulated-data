@@ -466,7 +466,6 @@ sim_ll <- sim_ll |>
   # fix outcome and dates
   mutate(
     date_outcome = case_when(
-      outcome & !is.na(date_outcome) ~ date_outcome,
       outcome & is.na(date_outcome) ~ date_admission + hosp_length,
       !outcome ~ date_admission + hosp_length,
       .default = NA
@@ -557,9 +556,5 @@ sim_ll <- sim_ll |>
     epi_classification
   )
 
+# Export clean linelist
 export(sim_ll, here::here("data", "clean", "simulated_measles_ll.rds"))
-
-## Save shapefiles as .rds ----------------------------
-
-#write_rds(adm1, "data/gpkg/chad_adm1.rds")
-#write_rds(adm2, "data/gpkg/chad_adm2.rds")

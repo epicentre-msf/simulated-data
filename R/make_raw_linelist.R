@@ -164,17 +164,9 @@ var_to_remove <- c(
 sim_raw_final_sub <- sim_raw_final |> select(-all_of(var_to_remove))
 
 # export in Excel
-export(sim_raw_final_sub, here::here("data", "final", "msf_linelist_moissala_2023-09-24.xlsx"))
+export(sim_raw_final_sub, here::here("data", "final", "xlsx", "msf_linelist_moissala_2023-09-24.xlsx"))
 
-export(sim_raw_final_sub, here::here("data", "final", "msf_linelist_moissala_2023-09-24.csv"))
-
-# # Keep only half of the outbreak
-# sim_raw_sub <- sim_raw_final |>
-#
-#   filter(`Date of onset of symptoms` < "2023-06-11")
-#
-# #export in Excel
-# export(sim_raw_sub, here::here("data", "final", "msf_linelist_moissala_2023-06-11.xlsx"))
+export(sim_raw_final_sub, here::here("data", "final", "csv", "msf_linelist_moissala_2023-09-24.csv"))
 
 # Dirtiness dictionnary --------------------------------------------------
 # Create the variable and dirtiness dictionary
