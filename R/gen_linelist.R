@@ -53,7 +53,9 @@ sim_ll <- simulist::sim_linelist(
   outbreak_size = c(100, 5000),
   population_age = rename(measles_params$age_str, proportion = p)
 ) |>
-  as_tibble()
+  as_tibble() |> 
+  # remove useless variables
+  select(-c(date_first_contact, date_last_contact, ct_value, case_name, case_type))
 
 # Plot
 d <- sim_ll |>
@@ -71,9 +73,6 @@ epivis::plot_pyramid(sim_ll,
   gender_col = sex,
   gender_levels = c("f", "m")
 )
-
-
-
 
 # Add name variable ------------------------------------------------------
 # these are listed by ChatGPT 
@@ -96,7 +95,6 @@ surnames <- c("Mahamat", "Abakar", "Idriss", "Oumar", "Moussa",
               "Ndjamen", "Djerassem", "Ngardou", "Nodjimbadem", 
               "Beassem", "Diguel", "Koulamallah", "Tchatchouang", 
               "Ngarlem", "Djimet", "Malloum")
-
 
 sim_ll <- sim_ll |> 
   mutate(full_name = paste0( ifelse(sex == "f", sample(female_names), sample(male_names)), " ", sample(surnames) ) ) |> 
@@ -125,7 +123,6 @@ sim_ll <- sim_ll |>
       ),
       age_group
     ),
-
     # give realistic age to under 1
     age = case_when(
       age_group == "< 6 months" ~ sample(1:5, nrow(sim_ll), replace = TRUE),
@@ -151,56 +148,34 @@ sim_ll <- sim_ll |>
         "5 - 14 years",
         "15+ years"
       )
-    ),
-    # variable about hospitalisation
-    # hospitalisation = if_else(is.na(date_admission), "no", "yes"),
-    hospitalisation = sample(c(NA, "yes"),
-      size = nrow(sim_ll),
-      replace = TRUE, prob = c(.05, .95)
-    ),
+    )
   ) |>
-  relocate(c(age, age_unit, age_group), .after = "sex") |>
+  relocate(c(age, age_unit, age_group), .after = "sex") 
+
+
+# Add hospitalisation data -----------------------------------------------
+
+sim_ll <- sim_ll |> 
+  mutate(
+    # variable about hospitalisation
+    hospitalisation = if_else(is.na(date_admission), sample(c(NA, "no"), size = nrow(sim_ll), replace = TRUE, prob = c(.05, .95)), "yes"),
+    # hospitalisation = sample(c(NA, "yes"),
+    #   size = nrow(sim_ll),
+    #   replace = TRUE, prob = c(.05, .95)
+    # ) 
+  ) |> 
   relocate(hospitalisation, .before = date_admission)
 
+sim_ll |> tabyl(hospitalisation)
 
 # Plots
-ggplot(data = sim_ll) +
-  geom_histogram(
-    aes(
-      x = date_onset,
-      fill = age_group
-    ),
-    binwidth = 7
-  ) +
-  scale_x_date(breaks = "1 month")
 
-ggplot(data = sim_ll) +
-  geom_histogram(
-    aes(
-      x = date_onset,
-      fill = hospitalisation
-    ),
-    binwidth = 7
-  ) +
-  scale_x_date(date_breaks = "1 month") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-
-
-## Dates variable -------------------------------------------
-
-# we will make all cases hospitalised despite the output of sim_lists
-sim_ll <- sim_ll |>
-  mutate(across(contains("date_"), ~ floor_date(.x, unit = "day"))) |> 
-  mutate(date_admission = case_when(
-    is.na(date_admission) ~ date_onset + sample(
-      c(1:5, NA),
-      size = nrow(sim_ll),
-      replace = TRUE,
-      prob = c(.2, .2, .2, .2, .19, .01)
-    ),
-    .default = date_admission
-  ))
-
+epivis::plot_pyramid(sim_ll, 
+  age_col = age_group, 
+  make_age_groups = FALSE,
+  gender_col = sex,
+  gender_levels = c("f", "m")
+)
 
 ## Add Symptoms variables  ----------------------------------------------------
 
@@ -216,7 +191,6 @@ sim_ll <- sim_ll |>
     encephalitis = rbinom(n = nrow(sim_ll), size = 1, prob = p_encephalitis),
   ) |>
   select(-contains("p_"))
-
 
 ## Add malnutrition ---------------------------------------------
 muac_cat <- unique(measles_params$muac_prob$muac_adm)
@@ -277,7 +251,6 @@ sim_ll <- sim_ll |>
       )
     )
   )
-
 
 ## Add vaccination status -----------------------------------
 vacc_cat <- unique(measles_params$vacc_prob$vacci_measles_yn)
@@ -415,7 +388,6 @@ sim_ll <- sim_ll |>
 # prop of deaths generated
 sim_ll |> tabyl(outcome)
 
-
 ### Test the Log regression -------------------------------------------------
 prep_ll <- sim_ll |>
   mutate(
@@ -537,9 +509,7 @@ sim_ll <- sim_ll |>
     )
   ) |>
   select(-c(
-    hosp_length, p_death, case_type,
-    # date_death
-  ))
+    hosp_length, p_death  ))
 
 ## Add RDT Malaria  -----------------------------------------------------------
 
@@ -563,7 +533,7 @@ sim_ll <- sim_ll |>
 sim_ll <- sim_ll |>
   select(
     id,
-    case_name,
+    full_name,
     sex,
     age,
     age_unit,

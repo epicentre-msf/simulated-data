@@ -234,7 +234,7 @@ sim_ll <- sim_ll |>
   mutate(
     health_facility_name = sapply(hf_local_name, function(x) sample(x, 1)), 
     #make sure no HF when hospitalisation is NA
-    health_facility_name = as.character(case_when(is.na(hospitalisation) ~ NA, .default = health_facility_name) )
+    health_facility_name = as.character(case_when(is.na(hospitalisation) | hospitalisation == "no" ~ NA, .default = health_facility_name) )
   ) |>
   select(-hf_local_name) |>
   relocate(c(health_facility_name), .after = date_admission)

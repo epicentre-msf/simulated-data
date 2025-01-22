@@ -41,25 +41,16 @@ sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll_geo.rds")
 names(sim_clean)
 
 ## Dirty Onset date --------------------------------------------------------------
-# make some onset date NA
-
-# random rows id to make NA
-rows_id <- sample(1:nrow(sim_clean),
-  replace = FALSE,
-  size = nrow(sim_clean) / 10
-)
-
-sim_clean <- sim_clean |>
-  
 
 sim_raw <- sim_clean |>
-
-mutate(date_onset = case_when(
-  row_number() %in% rows_id ~ NA,
-  .default = date_onset
-)) |>
+  # make some onset date NA
 
   mutate(
+    date_onset = case_when(
+      row_number() %in% sample(1:nrow(sim_clean), replace = FALSE, size = nrow(sim_clean) / 100) ~ NA,
+      .default = date_onset
+    ),
+
     sex = case_when(
 
       # Adding some labels to sex variable
@@ -70,9 +61,8 @@ mutate(date_onset = case_when(
     # adding some labels to outcome variable
     outcome = case_when(
 
-      # Adding some labels to sex variable
       outcome == "recovered" ~ sample(c("recovered", "gueri", NA), replace = TRUE, prob = c(.8, .15, .05), size = nrow(sim_clean)),
-      outcome == "died" ~ sample(c("died", "death", "mort", "lost", NA), replace = TRUE, prob = c(.7, .1, .1, .05, .05), size = nrow(sim_clean))
+      outcome == "dead" ~ sample(c("died", "death", "mort", "lost", NA), replace = TRUE, prob = c(.7, .1, .1, .05, .05), size = nrow(sim_clean))
     ),
 
     # convert age to months and all age_units to months
@@ -105,7 +95,8 @@ sim_raw <- sim_raw |>
     ),
     date_onset = case_when(row_number() %in% rows_id_2 ~ date_onset + years(10),
       .default = date_onset
-    )
+    ),
+    date_outcome = as.numeric(date_outcome)
   )
 
 # Adding some duplicates
@@ -139,6 +130,7 @@ sim_raw_final <- sim_raw |>
   rename(
     `EpiID Number` = id,
     `Sex patient` = sex,
+    `Case Name` = full_name,
     `Age` = age,
     `Age Units (months/years)` = age_unit,
     `Date of onset of symptoms` = date_onset,
@@ -147,6 +139,7 @@ sim_raw_final <- sim_raw |>
     `Date of Outcome` = date_outcome,
     `Sub prefecture of residence` = sub_prefecture,
     `Region of residence` = region,
+    `Village/Commune` = village_commune,
     `Participant had fever ?` = fever,
     `Participant had rash ?` = rash,
     `Participant had cough ?` = cough,
@@ -157,13 +150,12 @@ sim_raw_final <- sim_raw |>
     `Vaccination status` = vacc_status,
     `Vaccination dosage` = vacc_doses,
     `Patient outcome (death/recovered/LAMA)` = outcome,
-    `MSF site` = site,
+    `MSF site` = health_facility_name,
     `Malaria RDT` = malaria_rdt
   )
 
 # remove variables
 var_to_remove <- c(
-  "ct_value",
   "age_group",
   "epi_classification",
   "muac_cat"
@@ -184,14 +176,84 @@ export(sim_raw_final_sub, here::here("data", "final", "msf_linelist_moissala_202
 # #export in Excel
 # export(sim_raw_sub, here::here("data", "final", "msf_linelist_moissala_2023-06-11.xlsx"))
 
-
 # Dirtiness dictionnary --------------------------------------------------
-# Create the dirtiness dictin
-# Here to keep a list of the dirty elements in the data
+# Create the variable and dirtiness dictionary
+# this is saved to project and is reused if existing
 
-data.frame(
-  clean_variable_name = names(sim_clean),
-  raw_variable_name = names(sim_raw_final),
-  dirtiness = NA
-) |> 
-  mutate(type = ifelse(clean_variable_name %in% var_to_remove, "to be calculated", "provided") )
+get_cat_values <- function(x) {
+  char_var <- names(x)[sapply(x, function(col) class(col) %in% c("character", "factor"))]
+  # remove full_names
+  char_var <- char_var[!(char_var %in% c("full_name", "Case Name") )]
+
+  x |>
+    select(char_var) |>
+    mutate(across(everything(), ~ as.character(.x))) |>
+    pivot_longer(
+      cols = everything(),
+      names_to = "variable_name",
+      values_to = "categorical_values"
+    ) |>
+    summarise(
+      .by = variable_name,
+      categorical_values = paste(unique(categorical_values), collapse = " || "),
+    )
+}
+
+get_n_NA <- function(x) {
+  x |>
+    mutate(across(everything(), ~ as.character(.x))) |>
+    pivot_longer(,
+      cols = everything(),
+      names_to = "variable_name",
+      values_to = "values"
+    ) |>
+    summarise(
+      .by = variable_name,
+      n_na = sum(is.na(values))
+    )
+}
+
+path_dict <- here::here("data", "dictionnary")
+
+if (!fs::file_exists(here::here(path_dict, "measles_ll_full_dict_en.xlsx"))) {
+  cat_clean <- get_cat_values(sim_clean)
+  cat_raw <- get_cat_values(sim_raw_final)
+
+  na_clean <- get_n_NA(sim_clean)
+  na_raw <- get_n_NA(sim_raw_final)
+
+  dict <- data.frame(
+    clean_variable_name = names(sim_clean),
+    raw_variable_name = names(sim_raw_final),
+    clean_variable_type = sapply(sim_clean, class),
+    raw_variable_type = sapply(sim_raw_final, class),
+    description = NA,
+    dirtiness = NA
+  ) |>
+    mutate(type = ifelse(clean_variable_name %in% var_to_remove, "to be calculated", "provided")) |>
+    # add NA counts
+    left_join(select(na_clean, clean_variable_name = variable_name, clean_n_na = n_na), by = join_by("clean_variable_name")) |>
+    left_join(select(na_raw, raw_variable_name = variable_name, raw_n_na = n_na), by = join_by("raw_variable_name")) |>
+    # add categories
+    left_join(select(cat_clean, clean_variable_name = variable_name, clean_categorical_values = categorical_values), by = join_by("clean_variable_name")) |>
+    left_join(select(cat_raw, raw_variable_name = variable_name, raw_categorical_values = categorical_values), by = join_by("raw_variable_name")) |>
+    as_tibble()
+
+  fs::dir_create(path_dict)
+
+  rio::export(dict, here::here(path_dict, "measles_ll_full_dict_en.xlsx"))
+} else {
+  ll_dict <- rio::import(here::here(path_dict, "measles_ll_full_dict_en.xlsx")) |> as_tibble()
+
+  # export a subset of dictionnary for participants
+
+  dict_sub <- ll_dict |>
+    filter(type != "to be calculated") |>
+    select(
+      variable_name = raw_variable_name,
+      variable_type = raw_variable_type,
+      description
+    )
+
+  rio::export(dict_sub, here::here(path_dict, "measles_ll_dict_en.xlsx"))
+}
