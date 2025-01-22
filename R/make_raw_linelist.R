@@ -36,37 +36,29 @@ conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
 # read measles data
-sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll.rds"))
+sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll_geo.rds"))
 
 names(sim_clean)
-
-sim_clean |> count(encephalitis)
-
-
 
 ## Dirty Onset date --------------------------------------------------------------
 # make some onset date NA
 
 # random rows id to make NA
-rows_id <- sample(1:nrow(sim_ll),
+rows_id <- sample(1:nrow(sim_clean),
   replace = FALSE,
-  size = nrow(sim_ll) / 10
+  size = nrow(sim_clean) / 10
 )
 
-sim_ll <- sim_ll |>
-  mutate(date_onset = case_when(
-    row_number() %in% rows_id ~ NA,
-    .default = date_onset
-  )) |>
-  select(-c(date_first_contact, date_last_contact))
-
-
+sim_clean <- sim_clean |>
+  
 
 sim_raw <- sim_clean |>
 
-  
-  
-  
+mutate(date_onset = case_when(
+  row_number() %in% rows_id ~ NA,
+  .default = date_onset
+)) |>
+
   mutate(
     sex = case_when(
 
@@ -82,7 +74,6 @@ sim_raw <- sim_clean |>
       outcome == "recovered" ~ sample(c("recovered", "gueri", NA), replace = TRUE, prob = c(.8, .15, .05), size = nrow(sim_clean)),
       outcome == "died" ~ sample(c("died", "death", "mort", "lost", NA), replace = TRUE, prob = c(.7, .1, .1, .05, .05), size = nrow(sim_clean))
     ),
-
 
     # convert age to months and all age_units to months
     age = ifelse(age_unit == "years", age * 12, age),
@@ -116,7 +107,6 @@ sim_raw <- sim_raw |>
       .default = date_onset
     )
   )
-
 
 # Adding some duplicates
 # 150 random row id which can be binds again to data
@@ -204,4 +194,4 @@ data.frame(
   raw_variable_name = names(sim_raw_final),
   dirtiness = NA
 ) |> 
-  mutate(type = ifelse(clean_variable_name %in% var_to_remove, "to be calculated", "given"), )
+  mutate(type = ifelse(clean_variable_name %in% var_to_remove, "to be calculated", "provided") )
