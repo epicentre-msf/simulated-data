@@ -30,7 +30,7 @@ if (user == "hugzsoubrier") {
 # check that the data folder exists in repicentre otherwise creates it
 fs::dir_create(fs::path(paths$repicentre_repo_path, "data", "clean") ) 
 fs::dir_create(fs::path(paths$repicentre_repo_path, "data", "raw"))
-fs::dir_create(fs::path(paths$repicentre_repo_path, "data", "dictionnary"))
+fs::dir_create(fs::path(paths$repicentre_repo_path, "data", "dictionary"))
 
 # fetch only the simulated LL from the clean data folder in simulated_data repository 
 clean_ll <- fs::dir_ls(fs::path(paths$simulated_data_repo_path, "data", "clean"), regexp = ".*/simulated_measles[^/]*\\.rds")
@@ -39,7 +39,7 @@ clean_ll <- fs::dir_ls(fs::path(paths$simulated_data_repo_path, "data", "clean")
 raw_ll <- fs::dir_ls(fs::path(paths$simulated_data_repo_path, "data", "final"))
 
 # fetch only the simulated LL from the clean data folder in simulated_data repository 
-dict_ll <- fs::dir_ls(fs::path(paths$simulated_data_repo_path, "data", "dictionnary"))
+dict_ll <- fs::dir_ls(fs::path(paths$simulated_data_repo_path, "data", "dictionary"))
 
 # copy clean files
 for(i in clean_ll){
@@ -67,7 +67,7 @@ for(i in dict_ll){
   
   fs::file_copy(
     path = i, 
-    new_path = fs::path(paths$repicentre_repo_path, "data", "dictionnary"), 
+    new_path = fs::path(paths$repicentre_repo_path, "data", "dictionary"), 
     overwrite = TRUE
   )
   
