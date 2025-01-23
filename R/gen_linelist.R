@@ -13,6 +13,11 @@
 
 ## Load packages ---------------------------
 
+# Install epivis (https://epicentre-msf.r-universe.dev/epivis)
+# install.packages('epivis', 
+#                  repos = c('https://epicentre-msf.r-universe.dev', 
+#                            'https://cloud.r-project.org'))
+
 pacman::p_load(
   rio, # import funcs
   simulist, # generate fake linelist
@@ -23,10 +28,13 @@ pacman::p_load(
   here, # create relative paths
   janitor, # data cleaning
   lubridate, # date handling
-  tidyverse # data science
+  tidyverse, # data science
+  epivis
 )
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
+
+
 
 source("R/set_paths.R")
 
