@@ -34,7 +34,7 @@ conflicted::conflict_prefer("filter", "dplyr")
 ## Clean linelist ------------------------------
 
 # read clean measles data
-sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll_geo.rds"))
+sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll.rds"))
 
 sim_clean |> names()
 
@@ -254,6 +254,7 @@ lab_raw_fr <- lab_raw |>
   )
 
 export(lab_raw_fr, here::here("data", "final",  "xlsx", "msf_laboratoire_moissala_2023-09-24_fr.xlsx"))
+export(lab_raw_fr, here::here("data", "final",  "csv", "msf_laboratoire_moissala_2023-09-24_fr.csv"))
 
 # Dirtiness dictionnary --------------------------------------------------
 # Create the variable and dirtiness dictionary

@@ -29,7 +29,7 @@ conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
 # read data
-sim_ll <- readRDS(here::here("data", "clean", "simulated_measles_ll_geo.rds"))
+sim_ll <- readRDS(here::here("data", "clean", "simulated_measles_ll.rds"))
 
 lab <- sim_ll |> 
   
@@ -97,5 +97,6 @@ lab_raw <- lab |>
   )
 
 export(lab, here::here("data", "clean", "simulated_measles_lab_data.rds"))
+
 export(lab_raw, here::here("data", "final", "xlsx", "msf_laboratory_moissala_2023-09-24.xlsx"))
 export(lab_raw, here::here("data", "final", "csv", "msf_laboratory_moissala_2023-09-24.csv"))

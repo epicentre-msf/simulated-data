@@ -36,7 +36,7 @@ conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
 # read measles data
-sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll_geo.rds"))
+sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll.rds"))
 
 names(sim_clean)
 
