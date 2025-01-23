@@ -307,7 +307,7 @@ get_n_NA <- function(x) {
     )
 }
 
-path_dict <- here::here("data", "dictionnary")
+path_dict <- here::here("data", "dictionary")
 
 if (!fs::file_exists(here::here(path_dict, "measles_ll_full_dict_fr.xlsx"))) {
   cat_clean <- get_cat_values(sim_clean_fr)
