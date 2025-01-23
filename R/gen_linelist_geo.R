@@ -62,7 +62,7 @@ dates <- sim_ll |>
   arrange(date_onset) |>
   pull(date_onset)
 
-# Defines the oputbreak dates for each of the admin2
+# Defines the outbreak dates for each of the admin2
 out_dates_goundi <- c(as.Date("2023-08-19"), as.Date("2023-10-09"))
 out_dates_koumra <- c(as.Date("2023-08-13"), as.Date("2023-12-01"))
 out_dates_bedaya <- c(as.Date("2023-07-01"), as.Date("2023-12-01"))
@@ -110,6 +110,7 @@ date_prob <- data.frame(
 
 # assign the admin2 based on probability
 sim_ll <- sim_ll |>
+  select(-sub_prefecture) %>%  # to be replaced by a better one
   mutate(date_onset = floor_date(date_onset, unit = "day")) |>
   left_join(date_prob,
     by = join_by(date_onset == date),
