@@ -34,7 +34,7 @@ conflicted::conflict_prefer("filter", "dplyr")
 ## Clean linelist ------------------------------
 
 # read clean measles data
-sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll_geo.rds"))
+sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll.rds"))
 
 sim_clean |> names()
 

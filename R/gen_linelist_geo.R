@@ -245,4 +245,4 @@ ggplot(data = sim_ll) +
   facet_wrap(~health_facility_name)
 
 #* Save the data
-export(sim_ll, here::here("data", "clean", "simulated_measles_ll_geo.rds"))
+export(sim_ll, here::here("data", "clean", "simulated_measles_ll.rds"))
