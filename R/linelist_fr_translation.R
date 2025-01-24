@@ -46,6 +46,7 @@ sim_clean_fr <- sim_clean |>
     age_unite = age_unit,
     age_groupe = age_group,
     sous_prefecture = sub_prefecture,
+    structure_sante = health_facility_name,
     date_debut = date_onset,
     rdt_palu = malaria_rdt,
     fievre = fever,
@@ -128,6 +129,9 @@ sim_clean_fr <- sim_clean |>
 # save the fr clean version
 saveRDS(sim_clean_fr, here::here("data", "clean", "simulated_measles_ll_fr.rds"))
 
+
+
+
 ## Raw linelist ----------------------------
 
 # Load the raw linelist
@@ -201,9 +205,12 @@ sim_raw_final_fr <- sim_raw_final |>
     ),
     `Date de début des symptomes` = ymd(`Date de début des symptomes`)
   )
+
 # save the raw data
-saveRDS(sim_raw_final_fr, here::here("data", "final", "xlsx", "msf_listelineaire_rougeole_2023-09-24_fr.xlsx"))
-saveRDS(sim_raw_final_fr, here::here("data", "final", "csv", "msf_listelineaire_rougeole_2023-09-24_fr.csv"))
+export(sim_raw_final_fr, here::here("data", "final", "xlsx", "msf_listelineaire_rougeole_2023-09-24_fr.xlsx"))
+export(sim_raw_final_fr, here::here("data", "final", "csv", "msf_listelineaire_rougeole_2023-09-24_fr.csv"))
+
+
 
 # Translate lab data --------------------------------------------------------------
 
@@ -230,6 +237,7 @@ lab_clean_fr <- lab_clean |>
 # save clean lab result
 saveRDS(lab_clean_fr, here::here("data", "clean", "simulated_measles_lab_data_fr.rds"))
 
+
 ## Raw data ------------------------------------------------
 
 # import raw lab data
@@ -254,6 +262,8 @@ lab_raw_fr <- lab_raw |>
 
 export(lab_raw_fr, here::here("data", "final", "xlsx", "msf_laboratoire_moissala_2023-09-24_fr.xlsx"))
 export(lab_raw_fr, here::here("data", "final", "csv", "msf_laboratoire_moissala_2023-09-24_fr.csv"))
+
+
 
 # Dirtiness dictionnary --------------------------------------------------
 # Create the variable and dirtiness dictionary
