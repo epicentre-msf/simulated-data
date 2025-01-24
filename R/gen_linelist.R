@@ -284,19 +284,22 @@ sim_ll <- sim_ll |>
   ) 
 
 # Add birth date ---------------------------------------------------------
-# Calculate the birth_date column
-sim_ll$date_birth <- with(sim_ll, {
-  # Subtract years for "years" and months for "months"
-  ifelse(age_unit == "years", date_onset - years(age),
-         ifelse(age_unit == "months", date_onset - months(age), NA) )
-})
 
+# Calculate the birth_date column by substracting age from the 
+# date of onset and then adding some noise
 
 sim_ll <- sim_ll |> 
   mutate(
-  # add variation around birth date
-  date_birth = ifelse(age_unit == "months", date_birth - sample(1:31), date_birth - sample(1:365) ), 
-  date_birth = as.Date(date_birth)
+    # Substract age to date of onset
+    date_birth = case_when(
+      age_unit == "years"  ~ date_onset - years(age),
+      age_unit == "months" ~ date_onset - months(age),
+      .default = NA),
+    
+    # add variation around birth date
+    date_birth = case_when(
+      age_unit == "months" ~ date_birth - sample(1:31, 1), 
+      age_unit == "years"  ~ date_birth - sample(1:365, 1))
 ) |> relocate(date_birth, .after = age_group)
 
 ## Improve outcome ------------------------------------------
