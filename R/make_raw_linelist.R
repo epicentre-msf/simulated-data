@@ -241,7 +241,7 @@ if (!fs::file_exists(here::here(path_dict, "measles_ll_full_dict_en.xlsx"))) {
 } else {
   ll_dict <- rio::import(here::here(path_dict, "measles_ll_full_dict_en.xlsx")) |> as_tibble()
 
-  # export a subset of dictionnary for participants
+  # export a subset of dictionary for participants
 
   dict_sub <- ll_dict |>
     filter(type != "to be calculated") |>
