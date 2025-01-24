@@ -83,6 +83,7 @@ epivis::plot_pyramid(sim_ll,
 )
 
 # Add name variable ------------------------------------------------------
+
 # these are listed by ChatGPT 
 
 # Male names vector
@@ -166,7 +167,12 @@ sim_ll <- sim_ll |>
 sim_ll <- sim_ll |> 
   mutate(
     # variable about hospitalisation
-    hospitalisation = if_else(is.na(date_admission), sample(c(NA, "no"), size = nrow(sim_ll), replace = TRUE, prob = c(.05, .95)), "yes"),
+    hospitalisation = if_else(is.na(date_admission), 
+                              sample(c(NA, "no"), 
+                                     size = nrow(sim_ll), 
+                                     replace = TRUE, 
+                                     prob = c(.05, .95)), 
+                              "yes"),
     # hospitalisation = sample(c(NA, "yes"),
     #   size = nrow(sim_ll),
     #   replace = TRUE, prob = c(.05, .95)
