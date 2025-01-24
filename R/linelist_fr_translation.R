@@ -59,7 +59,6 @@ sim_clean_fr <- sim_clean |>
     pb_cat = muac_cat,
     statut_sortie = outcome,
     date_sortie = date_outcome,
-    structure_sante = health_facility_name,
     classification_epi = epi_classification
   ) |>
   # recode values
@@ -146,6 +145,7 @@ sim_raw_final_fr <- sim_raw_final |>
     `Age` = `Age`,
     `Unité d'Age (mois/ans)` = `Age Units (months/years)`,
     `Date de début des symptomes` = `Date of onset of symptoms`,
+    `Date de consultation` = `Date of consultation`,
     `Hospitalisation (oui/non)` = `Hospitalisation ("yes/no)`,
     `Date d'admission à l'hopital` = `Date of Admission in structure`,
     `Date de statut final` = `Date of Outcome`,

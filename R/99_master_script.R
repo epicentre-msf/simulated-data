@@ -13,8 +13,6 @@
 # The raw lab data is actually the same as the clean data, only
 # the linelist was dirtied
 
-
-
 # Get distributions 
 source(here::here("R", "measles_data.R")) # Output: "data/clean/measles_params.rds"
 
@@ -26,7 +24,6 @@ source(here::here("R", "gen_linelist_geo.R")) # Output: "data/clean/simulated_me
 source(here::here("R", "gen_lab_data.R")) 
 # Outputs: "data/clean/simulated_measles_lab_data.rds"
 # And "data/final/msf_laboratory_moissala_2023-09-24.xlsx" (Raw, but not dirtied)
-
 
 # Import, dirties, save:
 source(here::here("R", "make_raw_linelist.R")) 
