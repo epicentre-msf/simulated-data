@@ -58,6 +58,7 @@ sim_clean_fr <- sim_clean |>
     pb_cat = muac_cat,
     statut_sortie = outcome,
     date_sortie = date_outcome,
+    structure_sante = health_facility_name,
     classification_epi = epi_classification
   ) |>
   # recode values
@@ -279,7 +280,6 @@ get_cat_values <- function(x) {
   char_var <- names(x)[unlist(sapply(x, function(col) class(col) %in% c("character", "factor")))]
   # remove full_names
   char_var <- char_var[!(char_var %in% c("Nom du patient", "nom"))]
-
   x |>
     select(char_var) |>
     mutate(across(everything(), ~ as.character(.x))) |>

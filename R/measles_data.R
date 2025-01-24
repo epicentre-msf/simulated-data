@@ -231,14 +231,20 @@ dist_infect_period <- epiparameter::epiparameter(
 
 ## Age structure -------------------------------------------
 
-# define an age structure
-age_str <- dat_clean |>
-  count(age_range) |>
-  na.omit() |>
-  mutate(p = round(n / sum(n), digits = 3)) |>
-  select(age_range, p)
+# define an age structure - MANUALLY because we had rounding problem
+# age_str <- dat_clean |>
+#   count(age_range) |>
+#   na.omit() |>
+#   mutate(p = round(n / sum(n), digits = 5)) |>
+#   select(age_range, p)
+
+age_str <- tibble(
+  age_range = c("0-1", "15-40", "2-4", "5-14"),
+  p = c(0.433, 0.052, 0.280, 0.235)
+)
 
 # define hospitalisation based on age
+
 age_hosp <- dat_clean |>
   mutate(age_range = case_match(
     age_group,

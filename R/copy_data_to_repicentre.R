@@ -59,7 +59,7 @@ for(i in clean_ll){
   )
 
 #copy dict dir 
-fs::file_copy(
+fs::dir_copy(
     path = dict_dir, 
     new_path = fs::path(paths$repicentre_repo_path, "data", "dictionary"), 
     overwrite = TRUE
