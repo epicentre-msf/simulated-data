@@ -19,10 +19,6 @@ conflicted::conflict_prefer("filter", "dplyr")
 
 source("R/set_paths.R")
 
-#  Tasks -----------------------------------------------------------------
-
-# TODO assign Health facilities
-# TODO assign coordinates
 
 # Import data ------------------------------------------------------------
 
@@ -53,7 +49,7 @@ mandoul_adm4 <- adm4 |> filter(adm1_name == "Mandoul")
 # keep only health facilities in mandoul
 hf_mandoul <- hf[mandoul_adm2, ]
 
-#* Add Geographic Variables --------------------------------
+# Add Geographic Variables --------------------------------
 
 # get date vector - have to go through this because date_onset in simulist is actually a datetime so can't remove duplicates with unique()
 dates <- sim_ll |>
@@ -110,14 +106,13 @@ date_prob <- data.frame(
 
 # assign the admin2 based on probability
 sim_ll <- sim_ll |>
-  select(-sub_prefecture) %>%  # to be replaced by a better one
   mutate(date_onset = floor_date(date_onset, unit = "day")) |>
   left_join(date_prob,
     by = join_by(date_onset == date),
     relationship = "many-to-many"
   ) |>
   summarise(
-    .by = 1:23,
+    .by = 1:ncol(sim_ll),
     region = "Mandoul",
     sub_prefecture = sample(sub_prefecture, probability, size = 1, replace = TRUE)
   )

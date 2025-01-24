@@ -145,6 +145,7 @@ sim_raw_final_fr <- sim_raw_final |>
     `Age` = `Age`,
     `Unité d'Age (mois/ans)` = `Age Units (months/years)`,
     `Date de début des symptomes` = `Date of onset of symptoms`,
+    `Date de consultation` = `Date of consultation`,
     `Hospitalisation (oui/non)` = `Hospitalisation ("yes/no)`,
     `Date d'admission à l'hopital` = `Date of Admission in structure`,
     `Date de statut final` = `Date of Outcome`,
@@ -289,7 +290,6 @@ get_cat_values <- function(x) {
   char_var <- names(x)[unlist(sapply(x, function(col) class(col) %in% c("character", "factor")))]
   # remove full_names
   char_var <- char_var[!(char_var %in% c("Nom du patient", "nom"))]
-
   x |>
     select(char_var) |>
     mutate(across(everything(), ~ as.character(.x))) |>

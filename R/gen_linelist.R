@@ -34,8 +34,6 @@ pacman::p_load(
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
-
-
 source("R/set_paths.R")
 
 ## Import data ------------------------------------------------
@@ -176,14 +174,18 @@ sim_ll <- sim_ll |>
     # hospitalisation = sample(c(NA, "yes"),
     #   size = nrow(sim_ll),
     #   replace = TRUE, prob = c(.05, .95)
-    # ) 
+    # ), 
+    date_consultation = case_when(
+      hospitalisation == "no" | is.na(hospitalisation) ~date_onset + sample(1:6, 1), 
+      hospitalisation == "yes" ~ date_admission
+  )
   ) |> 
-  relocate(hospitalisation, .before = date_admission)
+  relocate(hospitalisation, .before = date_admission) |> 
+  relocate(date_consultation, .before = hospitalisation) 
 
 sim_ll |> tabyl(hospitalisation)
 
 # Plots
-
 epivis::plot_pyramid(sim_ll, 
   age_col = age_group, 
   make_age_groups = FALSE,
@@ -299,18 +301,17 @@ sim_ll <- sim_ll |>
 
 # Add birth date ---------------------------------------------------------
 # Calculate the birth_date column
-sim_ll$date_birth <- with(sim_ll, {
-  # Subtract years for "years" and months for "months"
-  ifelse(age_unit == "years", date_onset - years(age),
-         ifelse(age_unit == "months", date_onset - months(age), NA) )
-})
-
-
 sim_ll <- sim_ll |> 
   mutate(
-  # add variation around birth date
-  date_birth = ifelse(age_unit == "months", date_birth - sample(1:31), date_birth - sample(1:365) ), 
-  date_birth = as.Date(date_birth)
+date_birth = case_when(
+
+  age_unit == "years" ~ date_onset - years(age), 
+  age_unit == "months" ~ date_onset - months(age), 
+  .default = NA
+), 
+date_birth = case_when(
+  age_unit == "months" ~date_birth - sample(1:31, 1), 
+  age_unit == "years" ~date_birth - sample(1:365, 1))
 ) |> relocate(date_birth, .after = age_group)
 
 ## Improve outcome ------------------------------------------
@@ -552,6 +553,7 @@ sim_ll <- sim_ll |>
     age_unit,
     age_group,
     date_onset,
+    date_consultation,
     hospitalisation,
     date_admission,
     malaria_rdt,
