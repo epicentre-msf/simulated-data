@@ -235,7 +235,7 @@ dist_infect_period <- epiparameter::epiparameter(
 age_str <- dat_clean |>
   count(age_range) |>
   na.omit() |>
-  mutate(p = round(n / sum(n), digits = 3)) |>
+  mutate(p = round(n / sum(n), digits = 5)) |>
   select(age_range, p)
 
 # define hospitalisation based on age
