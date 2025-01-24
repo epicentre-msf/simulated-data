@@ -49,10 +49,11 @@ lab <- sim_ll |>
   mutate(.by = lab_id, 
          lab_id = paste0(lab_id, seq_along(lab_id) ) ) 
 
+# See what's going on there
 lab <- lab |> 
   mutate(
-    delay_hosp = as.numeric(date_outcome - date_admission ),
-    delay_test = round(sample(1:delay_hosp, replace = TRUE, nrow(lab))),
+    delay_hosp = ifelse(!is.na(date_outcome), as.numeric(date_outcome - date_admission), sample(1:3, size = 1) ),
+    delay_test = sample(1:delay_hosp, replace = TRUE, size = nrow(lab) ),
     date_test = date_admission + delay_test, 
     lab_result = case_when( 
       
@@ -65,7 +66,6 @@ lab <- lab |>
     ct_value = if_else(lab_result == "positive",  round(digits = 1, rnorm(nrow(lab), 27.3)), NA) ) 
 
 inc <- lab |> filter(lab_result == "inconclusive")
-
 
 inc <- inc |> 
   mutate(

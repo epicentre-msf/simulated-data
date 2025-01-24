@@ -112,7 +112,7 @@ sim_ll <- sim_ll |>
     relationship = "many-to-many"
   ) |>
   summarise(
-    .by = 1:23,
+    .by = 1:ncol(sim_ll),
     region = "Mandoul",
     sub_prefecture = sample(sub_prefecture, probability, size = 1, replace = TRUE)
   )

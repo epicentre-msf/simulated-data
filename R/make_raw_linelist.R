@@ -137,6 +137,7 @@ sim_raw_final <- sim_raw |>
     `Age` = age,
     `Age Units (months/years)` = age_unit,
     `Date of onset of symptoms` = date_onset,
+    `Date of consultation` = date_consultation,
     `Hospitalisation ("yes/no)` = hospitalisation,
     `Date of Admission in structure` = date_admission,
     `Date of Outcome` = date_outcome,

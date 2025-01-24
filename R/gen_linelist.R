@@ -34,8 +34,6 @@ pacman::p_load(
 conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
-
-
 source("R/set_paths.R")
 
 ## Import data ------------------------------------------------
@@ -170,14 +168,18 @@ sim_ll <- sim_ll |>
     # hospitalisation = sample(c(NA, "yes"),
     #   size = nrow(sim_ll),
     #   replace = TRUE, prob = c(.05, .95)
-    # ) 
+    # ), 
+    date_consultation = case_when(
+      hospitalisation == "no" | is.na(hospitalisation) ~date_onset + sample(1:6, 1), 
+      hospitalisation == "yes" ~ date_admission
+  )
   ) |> 
-  relocate(hospitalisation, .before = date_admission)
+  relocate(hospitalisation, .before = date_admission) |> 
+  relocate(date_consultation, .before = hospitalisation) 
 
 sim_ll |> tabyl(hospitalisation)
 
 # Plots
-
 epivis::plot_pyramid(sim_ll, 
   age_col = age_group, 
   make_age_groups = FALSE,
@@ -545,6 +547,7 @@ sim_ll <- sim_ll |>
     age_unit,
     age_group,
     date_onset,
+    date_consultation,
     hospitalisation,
     date_admission,
     malaria_rdt,
