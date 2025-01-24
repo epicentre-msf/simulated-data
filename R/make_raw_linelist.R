@@ -40,32 +40,33 @@ sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll.rds"))
 
 names(sim_clean)
 
-## Dirty Onset date --------------------------------------------------------------
+
+
+# Dirty linelist -------------------------------------------
 
 sim_raw <- sim_clean |>
-  # make some onset date NA
-
+ 
   mutate(
+    
+    # Add missingness to date of onset
     date_onset = case_when(
       row_number() %in% sample(1:nrow(sim_clean), replace = FALSE, size = nrow(sim_clean) / 100) ~ NA,
       .default = date_onset
     ),
 
+    # Encoding errors on sex
     sex = case_when(
-
-      # Adding some labels to sex variable
       sex == "f" ~ sample(c("f", "female", "femme"), replace = TRUE, prob = c(.8, .1, .1), size = nrow(sim_clean)),
       sex == "m" ~ sample(c("m", "male", "homme"), replace = TRUE, prob = c(.8, .1, .1), size = nrow(sim_clean))
     ),
 
-    # adding some labels to outcome variable
+    # Encoding errors on outcome
     outcome = case_when(
-
       outcome == "recovered" ~ sample(c("recovered", "gueri", NA), replace = TRUE, prob = c(.8, .15, .05), size = nrow(sim_clean)),
       outcome == "dead" ~ sample(c("died", "death", "mort", "lost", NA), replace = TRUE, prob = c(.7, .1, .1, .05, .05), size = nrow(sim_clean))
     ),
 
-    # convert age to months and all age_units to months
+    # Convert age to months and all age_units to months
     age = ifelse(age_unit == "years", age * 12, age),
     age_unit = case_match(age_unit, "years" ~ "months", .default = age_unit),
 
@@ -74,7 +75,7 @@ sim_raw <- sim_clean |>
     #                      .default = age_unit),
 
 
-    # adding some missingness to symptoms + cobverting to "yes" / "no"
+    # Add some missingness to symptoms + converting to "yes" / "no"
     across(c(fever, rash, cough, red_eye, pneumonia, encephalitis), ~ case_when(
       .x == 1 ~ sample(c(1, NA), replace = TRUE, size = nrow(sim_clean), prob = c(.9, .1)),
       .x == 0 ~ sample(c(0, NA), replace = TRUE, size = nrow(sim_clean), prob = c(.85, .15))
@@ -87,8 +88,10 @@ sim_raw <- sim_clean |>
 rows_id <- sample(1:nrow(sim_raw), replace = FALSE, size = 50)
 rows_id_2 <- sample(1:nrow(sim_raw), replace = FALSE, size = 10)
 
+
+# Mess up dates
 sim_raw <- sim_raw |>
-  # adding some wrong format to dates + dates in futur
+  
   mutate(
     date_admission = case_when(row_number() %in% rows_id ~ format(date_admission, "%Y-%b-%d"),
       .default = as.character(date_admission)
@@ -99,7 +102,7 @@ sim_raw <- sim_raw |>
     date_outcome = as.numeric(date_outcome)
   )
 
-# Adding some duplicates
+# Add some duplicates
 # 150 random row id which can be binds again to data
 rows_id_3 <- slice_sample(sim_raw, n = 150)
 
@@ -168,7 +171,8 @@ export(sim_raw_final_sub, here::here("data", "final", "xlsx", "msf_linelist_mois
 
 export(sim_raw_final_sub, here::here("data", "final", "csv", "msf_linelist_moissala_2023-09-24.csv"))
 
-# Dirtiness dictionnary --------------------------------------------------
+
+# Dirtiness dictionary --------------------------------------------------
 # Create the variable and dirtiness dictionary
 # this is saved to project and is reused if existing
 
