@@ -99,7 +99,8 @@ sim_raw <- sim_raw |>
     date_onset = case_when(row_number() %in% rows_id_2 ~ date_onset + years(10),
       .default = date_onset
     ),
-    date_outcome = as.numeric(date_outcome)
+
+    date_outcome = as.character(date_outcome)
   )
 
 # Add some duplicates
@@ -124,7 +125,6 @@ rows_id_no_fullmatch <- head(rows_id_3, n = 50) |> mutate(
 # these are perfect duplicates
 sim_raw <- bind_rows(sim_raw, filter(rows_id_3, !(id %in% rows_id_no_fullmatch$id))) |>
   bind_rows(rows_id_no_fullmatch)
-
 
 # rename variables
 sim_raw |> names()
