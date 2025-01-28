@@ -56,27 +56,18 @@ df_en <- df_en_raw %>%
                         .x == 0 ~ "no"))
   ) %>% 
   
-  # Add date consultation
-  mutate(
-
-    date_consultation = case_when(
-      hospitalisation == "no"  ~ date_onset + floor(runif(1, 0, 6.2)),
-      is.na(hospitalisation)   ~ date_onset + floor(runif(1, 0, 6.2)),
-      hospitalisation == "yes" ~ date_admission),
-    
-    .before = hospitalisation) %>% 
-  
   # Add age in months
   mutate(    
     age_months = case_when(
       age_unit == "years" ~ age * 12,
-      .default = age),
+      age_unit == "months" ~ age,
+      .default = NA),
     
     .before = age_group) %>% 
   
   # Add age in years
   mutate(    
-    age_years = age_months / 12,
+    age_years = round(age_months / 12),
     .before = age_group) %>% 
   
   # To aggregate by week
@@ -123,26 +114,17 @@ df_fr <- df_fr_raw %>%
                         .x == 1 ~ "oui",
                         .x == 0 ~ "non"))) %>% 
   
-  # Add date consultation
-  mutate(
-    
-    date_consultation = case_when(
-      hospitalisation == "no"  ~ date_debut + floor(runif(1, 0, 6.2)),
-      is.na(hospitalisation)   ~ date_debut + floor(runif(1, 0, 6.2)),
-      hospitalisation == "yes" ~ date_admission),
-    
-    .before = hospitalisation) %>% 
-  
   # Add age in months
   mutate(    
     age_mois = case_when(
-      age_unite == "years" ~ age * 12,
-      .default = age),
+      age_unite == "ans" ~ age * 12,
+      age_unite == "mois" ~ age,
+      .default = NA),
     .before = age_groupe) %>%
   
   # Add age_years
   mutate(    
-    age_annees = age_mois / 12,
+    age_annees = round(age_mois / 12, 1),
     .before = age_groupe) %>% 
   
   
@@ -169,10 +151,12 @@ df_fr %>% filter(date_sortie - date_consultation < 0 )
 df_fr %>% filter(duree_sejour < 0)
 
 # Check vaccination doses
-df_en %>% 
+df_fr %>% 
   count(vacc_status,
         vacc_doses)
 
+df_fr %>% 
+  count(age, age_unite, age_groupe)
 
 # Export ----------------------------------------------
 
