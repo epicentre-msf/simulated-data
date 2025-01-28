@@ -1,6 +1,5 @@
 # ---------------------------
-# Purpose of script: Send data to the repicentre repository
-#
+# Purpose of script: Send data to the repicentre repository 
 # Author: Hugo Soubrier
 #
 # Date Created: 2024-11-18
@@ -8,10 +7,10 @@
 # Email: hugo.soubrier@epicentre.msf.org
 # ---------------------------
 # Notes:
-#   
-#
 #
 # ---------------------------
+
+# ! NOT NEEDED ANYMORE AS DATA ARE SENT IN EPISIMDATA
 
 # user specific paths
 user <- Sys.info()[["user"]]
