@@ -36,11 +36,9 @@ conflicted::conflict_prefer("select", "dplyr")
 conflicted::conflict_prefer("filter", "dplyr")
 
 # read measles data
-sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll.rds"))
+sim_clean <- readRDS(here::here("data", "clean", "moissala_linelist_clean_EN.rds"))
 
 names(sim_clean)
-
-
 
 # Dirty linelist -------------------------------------------
 
@@ -129,34 +127,34 @@ sim_raw <- bind_rows(sim_raw, filter(rows_id_3, !(id %in% rows_id_no_fullmatch$i
 # rename variables
 sim_raw |> names()
 
-sim_raw_final <- sim_raw |>
-  rename(
-    `EpiID Number` = id,
-    `Sex patient` = sex,
-    `Case Name` = full_name,
-    `Age` = age,
-    `Age Units (months/years)` = age_unit,
-    `Date of onset of symptoms` = date_onset,
-    `Date of consultation` = date_consultation,
-    `Hospitalisation ("yes/no)` = hospitalisation,
-    `Date of Admission in structure` = date_admission,
-    `Date of Outcome` = date_outcome,
-    `Sub prefecture of residence` = sub_prefecture,
-    `Region of residence` = region,
-    `Village/Commune` = village_commune,
-    `Participant had fever ?` = fever,
-    `Participant had rash ?` = rash,
-    `Participant had cough ?` = cough,
-    `Participant had red_eye ?` = red_eye,
-    `Participant had pneumonia ?` = pneumonia,
-    `Participant had encephalitis ?` = encephalitis,
-    `Middle Upper Arm Circumference (MUAC)` = muac,
-    `Vaccination status` = vacc_status,
-    `Vaccination dosage` = vacc_doses,
-    `Patient outcome (death/recovered/LAMA)` = outcome,
-    `MSF site` = health_facility_name,
-    `Malaria RDT` = malaria_rdt
-  )
+# sim_raw_final <- sim_raw |>
+#   rename(
+#     `EpiID Number` = id,
+#     `Sex patient` = sex,
+#     `Case Name` = full_name,
+#     `Age` = age,
+#     `Age Units (months/years)` = age_unit,
+#     `Date of onset of symptoms` = date_onset,
+#     `Date of consultation` = date_consultation,
+#     `Hospitalisation ("yes/no)` = hospitalisation,
+#     `Date of Admission in structure` = date_admission,
+#     `Date of Outcome` = date_outcome,
+#     `Sub prefecture of residence` = sub_prefecture,
+#     `Region of residence` = region,
+#     `Village/Commune` = village_commune,
+#     `Participant had fever ?` = fever,
+#     `Participant had rash ?` = rash,
+#     `Participant had cough ?` = cough,
+#     `Participant had red_eye ?` = red_eye,
+#     `Participant had pneumonia ?` = pneumonia,
+#     `Participant had encephalitis ?` = encephalitis,
+#     `Middle Upper Arm Circumference (MUAC)` = muac,
+#     `Vaccination status` = vacc_status,
+#     `Vaccination dosage` = vacc_doses,
+#     `Patient outcome (death/recovered/LAMA)` = outcome,
+#     `MSF site` = health_facility_name,
+#     `Malaria RDT` = malaria_rdt
+#   )
 
 # remove variables
 var_to_remove <- c(
@@ -165,12 +163,12 @@ var_to_remove <- c(
   "muac_cat"
 )
 
-sim_raw_final_sub <- sim_raw_final |> select(-all_of(var_to_remove))
+sim_raw_final_sub <- sim_raw |> select(-all_of(var_to_remove))
 
 # export in Excel
-export(sim_raw_final_sub, here::here("data", "final", "xlsx", "msf_linelist_moissala_2023-09-24.xlsx"))
+export(sim_raw_final_sub, here::here("data", "final", "xlsx", "moissala_linelist_EN.xlsx"))
 
-export(sim_raw_final_sub, here::here("data", "final", "csv", "msf_linelist_moissala_2023-09-24.csv"))
+export(sim_raw_final_sub, here::here("data", "final", "csv", "moissala_linelist_EN.csv"))
 
 
 # Dirtiness dictionary --------------------------------------------------

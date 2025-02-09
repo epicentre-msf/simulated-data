@@ -34,7 +34,7 @@ conflicted::conflict_prefer("filter", "dplyr")
 ## Clean linelist ------------------------------
 
 # read clean measles data
-sim_clean <- readRDS(here::here("data", "clean", "simulated_measles_ll.rds"))
+sim_clean <- readRDS(here::here("data", "clean", "moissala_linelist_clean_EN.rds"))
 
 sim_clean |> names()
 
@@ -126,91 +126,118 @@ sim_clean_fr <- sim_clean |>
   )
 
 # save the fr clean version
-saveRDS(sim_clean_fr, here::here("data", "clean", "simulated_measles_ll_fr.rds"))
-
-
-
+saveRDS(sim_clean_fr, here::here("data", "clean", "moissala_linelist_clean_FR.rds"))
 
 ## Raw linelist ----------------------------
 
 # Load the raw linelist
 
-sim_raw_final <- import(here::here("data", "final", "xlsx", "msf_linelist_moissala_2023-09-24.xlsx")) |> as_tibble()
+sim_raw_final <- import(here::here("data", "final", "xlsx", "moissala_linelist_EN.xlsx")) |> as_tibble()
+
+sim_raw_final |> names()
 
 sim_raw_final_fr <- sim_raw_final |>
-  rename(
-    `Numero ID` = `EpiID Number`,
-    `Sexe du patient` = `Sex patient`,
-    `Nom du patient` = `Case Name`,
-    `Age` = `Age`,
-    `Unité d'Age (mois/ans)` = `Age Units (months/years)`,
-    `Date de début des symptomes` = `Date of onset of symptoms`,
-    `Date de consultation` = `Date of consultation`,
-    `Hospitalisation (oui/non)` = `Hospitalisation ("yes/no)`,
-    `Date d'admission à l'hopital` = `Date of Admission in structure`,
-    `Date de statut final` = `Date of Outcome`,
-    `Sous préfécture de résidence` = `Sub prefecture of residence`,
-    `Région de résidence` = `Region of residence`,
-    `Village ou Commune` = `Village/Commune`,
-    `Patient à de la fièvre ?` = `Participant had fever ?`,
-    `Patient à une éruption cutanée ?` = `Participant had rash ?`,
-    `Patient à de la toux ?` = `Participant had cough ?`,
-    `Patient à les yeux rouges ?` = `Participant had red_eye ?`,
-    `Patient à une pneumonie ?` = `Participant had pneumonia ?`,
-    `Patient à une encéphalite?` = `Participant had encephalitis ?`,
-    `Perimètre brachial ? (PB)` = `Middle Upper Arm Circumference (MUAC)`,
-    `Status de la vaccination` = `Vaccination status`,
-    `Doses de vaccins` = `Vaccination dosage`,
-    `Status final à la sortie` = `Patient outcome (death/recovered/LAMA)`,
-    `Nom du site MSF` = `MSF site`,
-    `Test rapide Paludisme` = `Malaria RDT`
-  ) |>
+
+    rename(
+      # Keep id as is
+      nom_complet = full_name,
+      sexe = sex,
+      age = age,
+      unite_age = age_unit,
+      region = region,
+      sous_prefecture = sub_prefecture,
+      village_commune = village_commune,
+      date_debut = date_onset,
+      date_consultation = date_consultation,
+      hospitalisation = hospitalisation,
+      date_admission = date_admission,
+      nom_structure_sante = health_facility_name,
+      tdr_paludisme = malaria_rdt,
+      fievre = fever,
+      eruption = rash,
+      toux = cough,
+      yeux_rouges = red_eye,
+      pneumonie = pneumonia,
+      encephalite = encephalitis,
+      pb = muac,  # or perimetre_brachial = muac
+      statut_vaccinal = vacc_status,
+      doses_vaccin = vacc_doses,
+      issue = outcome,
+      date_issue = date_outcome
+    ) |> 
+  
+  # rename(
+  #   `Numero ID` = `EpiID Number`,
+  #   `Sexe du patient` = `Sex patient`,
+  #   `Nom du patient` = `Case Name`,
+  #   `Age` = `Age`,
+  #   `Unité d'Age (mois/ans)` = `Age Units (months/years)`,
+  #   `Date de début des symptomes` = `Date of onset of symptoms`,
+  #   `Date de consultation` = `Date of consultation`,
+  #   `Hospitalisation (oui/non)` = `Hospitalisation ("yes/no)`,
+  #   `Date d'admission à l'hopital` = `Date of Admission in structure`,
+  #   `Date de statut final` = `Date of Outcome`,
+  #   `Sous préfécture de résidence` = `Sub prefecture of residence`,
+  #   `Région de résidence` = `Region of residence`,
+  #   `Village ou Commune` = `Village/Commune`,
+  #   `Patient à de la fièvre ?` = `Participant had fever ?`,
+  #   `Patient à une éruption cutanée ?` = `Participant had rash ?`,
+  #   `Patient à de la toux ?` = `Participant had cough ?`,
+  #   `Patient à les yeux rouges ?` = `Participant had red_eye ?`,
+  #   `Patient à une pneumonie ?` = `Participant had pneumonia ?`,
+  #   `Patient à une encéphalite?` = `Participant had encephalitis ?`,
+  #   `Perimètre brachial ? (PB)` = `Middle Upper Arm Circumference (MUAC)`,
+  #   `Status de la vaccination` = `Vaccination status`,
+  #   `Doses de vaccins` = `Vaccination dosage`,
+  #   `Status final à la sortie` = `Patient outcome (death/recovered/LAMA)`,
+  #   `Nom du site MSF` = `MSF site`,
+  #   `Test rapide Paludisme` = `Malaria RDT`
+  # ) |>
   mutate(
-    `Sexe du patient` = case_match(`Sexe du patient`, "m" ~ "h",
-      .default = `Sexe du patient`
+    sexe = case_match(sexe, 
+      "m" ~ "h",
+      .default = sexe
     ),
-    `Unité d'Age (mois/ans)` = case_match(`Unité d'Age (mois/ans)`,
+    unite_age = case_match(unite_age,
       "months" ~ "mois",
       "years" ~ "ans",
-      .default = `Unité d'Age (mois/ans)`
+      .default = unite_age
     ),
-    `Hospitalisation (oui/non)` = case_match(`Hospitalisation (oui/non)`,
+    hospitalisation = case_match(hospitalisation,
       "yes" ~ "oui",
       "no" ~ "non",
-      .default = `Hospitalisation (oui/non)`
+      .default = hospitalisation
     ),
     across(contains("Patient à"), ~ ifelse(.x == "Yes", "oui", "non")),
-    `Status de la vaccination` = case_match(`Status de la vaccination`,
+    statut_vaccinal = case_match(statut_vaccinal,
       "No" ~ "Non",
       "Uncertain" ~ "Incertain",
       "Yes - oral" ~ "Oui - oral",
       "Yes - card" ~ "Oui - carte",
-      .default = `Status de la vaccination`
+      .default = statut_vaccinal
     ),
-    `Doses de vaccins` = case_match(`Doses de vaccins`,
+    doses_vaccin = case_match(doses_vaccin,
       "Uncertain" ~ "Incertain",
-      .default = `Doses de vaccins`
+      .default = doses_vaccin
     ),
-    `Status final à la sortie` = case_match(`Status final à la sortie`,
+    issue = case_match(issue,
       "dead" ~ "deces",
       "recovered" ~ "gueri",
       "left against medical advice" ~ "sortie contre avis medical",
-      .default = `Status final à la sortie`
+      .default = issue
     ),
-    `Test rapide Paludisme` = case_match(`Test rapide Paludisme`,
+    tdr_paludisme = case_match(tdr_paludisme,
       "negative" ~ "negatif",
       "inconclusive" ~ "inconclusif",
       "positive" ~ "positif",
-      .default = `Test rapide Paludisme`
+      .default = tdr_paludisme
     ),
-    `Date de début des symptomes` = ymd(`Date de début des symptomes`)
+    date_debut = ymd(date_debut)
   )
 
 # save the raw data
-export(sim_raw_final_fr, here::here("data", "final", "xlsx", "msf_listelineaire_rougeole_2023-09-24_fr.xlsx"))
-export(sim_raw_final_fr, here::here("data", "final", "csv", "msf_listelineaire_rougeole_2023-09-24_fr.csv"))
-
-
+export(sim_raw_final_fr, here::here("data", "final", "xlsx", "moissala_linelist_FR.xlsx"))
+export(sim_raw_final_fr, here::here("data", "final", "csv", "moissala_linelist_FR.csv"))
 
 # Translate lab data --------------------------------------------------------------
 
@@ -241,7 +268,7 @@ saveRDS(lab_clean_fr, here::here("data", "clean", "simulated_measles_lab_data_fr
 ## Raw data ------------------------------------------------
 
 # import raw lab data
-lab_raw <- import(here::here("data", "final", "xlsx", "msf_laboratory_moissala_2023-09-24.xlsx")) |> as_tibble()
+lab_raw <- import(here::here("data", "final", "xlsx", "moissala_laboratory_EN.xlsx")) |> as_tibble()
 
 lab_raw_fr <- lab_raw |>
   rename(
@@ -260,10 +287,8 @@ lab_raw_fr <- lab_raw |>
     )
   )
 
-export(lab_raw_fr, here::here("data", "final", "xlsx", "msf_laboratoire_moissala_2023-09-24_fr.xlsx"))
-export(lab_raw_fr, here::here("data", "final", "csv", "msf_laboratoire_moissala_2023-09-24_fr.csv"))
-
-
+export(lab_raw_fr, here::here("data", "final", "xlsx", "moissala_laboratory_FR.xlsx"))
+export(lab_raw_fr, here::here("data", "final", "csv", "moissala_laboratory_FR.csv"))
 
 # Dirtiness dictionnary --------------------------------------------------
 # Create the variable and dirtiness dictionary
@@ -283,8 +308,8 @@ sim_raw_final_fr <- sim_raw_final_fr |>
     epi_classification = NA,
     muac_cat = NA
   ) |>
-  relocate(age_group, .after = `Unité d'Age (mois/ans)`) |>
-  relocate(muac_cat, .after = `Perimètre brachial ? (PB)`)
+  relocate(age_group, .after = unite_age) |>
+  relocate(muac_cat, .after = pb)
 
 get_cat_values <- function(x) {
   char_var <- names(x)[unlist(sapply(x, function(col) class(col) %in% c("character", "factor")))]

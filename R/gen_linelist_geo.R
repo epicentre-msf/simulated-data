@@ -92,7 +92,7 @@ date_prob <- data.frame(
     values_to = "check",
     names_prefix = "check_"
   ) |>
-  mutate(sub_prefecture = str_to_sentence(sub_prefecture)) |> 
+  mutate(sub_prefecture = str_to_sentence(sub_prefecture)) |>
   mutate(
     .by = index,
     n_admin_out = sum(check),
@@ -218,27 +218,27 @@ mapview::mapview(
 # get all villages and health zone that fall within each buffer zone
 hf_within_epi <- st_intersection(hf_mandoul, buffer)
 
-list_hf <- hf_within_epi |> 
-  distinct(adm2, local_name) |> 
-  filter(!is.na(local_name)) |> 
-  group_by(adm2) |> 
+list_hf <- hf_within_epi |>
+  distinct(adm2, local_name) |>
+  filter(!is.na(local_name)) |>
+  group_by(adm2) |>
   summarise(hf_local_name = list(local_name))
 
 # Join the linelist with the villages list, and then randomly assign an `adm4_name`
 sim_ll <- sim_ll |>
   left_join(list_hf, by = join_by("sub_prefecture" == "adm2")) |>
   mutate(
-    health_facility_name = sapply(hf_local_name, function(x) sample(x, 1)), 
-    #make sure no HF when hospitalisation is NA
-    health_facility_name = as.character(case_when(is.na(hospitalisation) | hospitalisation == "no" ~ NA, .default = health_facility_name) )
+    health_facility_name = sapply(hf_local_name, function(x) sample(x, 1)),
+    # make sure no HF when consultation is NA
+    health_facility_name = as.character(case_when(is.na(date_consultation) ~ NA, .default = health_facility_name))
   ) |>
   select(-hf_local_name) |>
   relocate(c(health_facility_name), .after = date_admission)
- 
+
 # Epicurve by different sites
 ggplot(data = sim_ll) +
   geom_histogram(aes(x = date_onset)) +
   facet_wrap(~health_facility_name)
 
 #* Save the data
-export(sim_ll, here::here("data", "clean", "simulated_measles_ll.rds"))
+export(sim_ll, here::here("data", "clean", "moissala_linelist_clean_EN.rds"))
