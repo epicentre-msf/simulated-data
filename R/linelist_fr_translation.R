@@ -232,7 +232,8 @@ sim_raw_final_fr <- sim_raw_final |>
       "positive" ~ "positif",
       .default = tdr_paludisme
     ),
-    date_debut = ymd(date_debut)
+    date_debut = ymd(date_debut), 
+    date_consultation = ymd(date_consultation)
   )
 
 # save the raw data
