@@ -122,7 +122,11 @@ sim_clean_fr <- sim_clean |>
       "negative" ~ "negatif",
       "positive" ~ "positif",
       .default = rdt_palu
-    )
+    ),    
+    across(fievre:encephalite,
+                  ~ case_match(.x, 
+                               1 ~ "oui",
+                               0 ~ "non"))
   )
 
 # save the fr clean version
@@ -233,7 +237,11 @@ sim_raw_final_fr <- sim_raw_final |>
       .default = tdr_paludisme
     ),
     date_debut = ymd(date_debut), 
-    date_consultation = as.Date(date_consultation)
+    date_consultation = as.Date(date_consultation),
+    across(fievre:encephalite,
+           ~ case_match(.x,
+                        "Yes" ~ "oui",
+                        "No"  ~ "non"))
   )
 
 # save the raw data
