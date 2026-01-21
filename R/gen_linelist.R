@@ -14,8 +14,8 @@
 ## Load packages ---------------------------
 
 # Install epivis (https://epicentre-msf.r-universe.dev/epivis)
-# install.packages('epivis', 
-#                  repos = c('https://epicentre-msf.r-universe.dev', 
+# install.packages('epivis',
+#                  repos = c('https://epicentre-msf.r-universe.dev',
 #                            'https://cloud.r-project.org'))
 
 pacman::p_load(
@@ -59,9 +59,11 @@ sim_ll <- simulist::sim_linelist(
   outbreak_size = c(100, 5000),
   population_age = rename(measles_params$age_str, proportion = p)
 ) |>
-  as_tibble() |> 
+  as_tibble() |>
   # remove useless variables
-  select(-c(date_first_contact, date_last_contact, ct_value, case_name, case_type))
+  select(
+    -c(date_first_contact, date_last_contact, ct_value, case_name, case_type)
+  )
 
 # Plot
 d <- sim_ll |>
@@ -74,36 +76,96 @@ ggplot(data = d) +
     y = n
   ))
 
-epivis::plot_pyramid(sim_ll, 
-  age_col = age, 
+epivis::plot_pyramid(
+  sim_ll,
+  age_col = age,
   gender_col = sex,
   gender_levels = c("f", "m")
 )
 
 # Add name variable ------------------------------------------------------
-# these are listed by ChatGPT 
+# these are listed by ChatGPT
 
 # Male names vector
-male_names <- c("Mahamat", "Abakar", "Issa", "Adam", "Moussa", 
-                "Idriss", "Souleymane", "Oumar", "Youssouf", 
-                "Ali", "Brahim", "Ahmat", "Salih", "Djamal", "Hassan")
+male_names <- c(
+  "Mahamat",
+  "Abakar",
+  "Issa",
+  "Adam",
+  "Moussa",
+  "Idriss",
+  "Souleymane",
+  "Oumar",
+  "Youssouf",
+  "Ali",
+  "Brahim",
+  "Ahmat",
+  "Salih",
+  "Djamal",
+  "Hassan"
+)
 
 # Female names vector
-female_names <- c("Amina", "Fatima", "Mariam", "Salma", "Halima", 
-                  "Khadija", "Zeinab", "Fadila", "Safia", "Hawa", 
-                  "Noura", "Leila", "Rahma", "Bintou", "Nadja")
+female_names <- c(
+  "Amina",
+  "Fatima",
+  "Mariam",
+  "Salma",
+  "Halima",
+  "Khadija",
+  "Zeinab",
+  "Fadila",
+  "Safia",
+  "Hawa",
+  "Noura",
+  "Leila",
+  "Rahma",
+  "Bintou",
+  "Nadja"
+)
 
 # Surnames vector
-surnames <- c("Mahamat", "Abakar", "Idriss", "Oumar", "Moussa", 
-              "Ali", "Brahim", "Hassan", "Adam", "Souleymane", 
-              "Ahmat", "Salih", "Issa", "Youssouf", "Djamal", 
-              "Touka", "Mbaitoloum", "Ngarmbatina", "Ngbadingar", 
-              "Ndjamen", "Djerassem", "Ngardou", "Nodjimbadem", 
-              "Beassem", "Diguel", "Koulamallah", "Tchatchouang", 
-              "Ngarlem", "Djimet", "Malloum")
+surnames <- c(
+  "Mahamat",
+  "Abakar",
+  "Idriss",
+  "Oumar",
+  "Moussa",
+  "Ali",
+  "Brahim",
+  "Hassan",
+  "Adam",
+  "Souleymane",
+  "Ahmat",
+  "Salih",
+  "Issa",
+  "Youssouf",
+  "Djamal",
+  "Touka",
+  "Mbaitoloum",
+  "Ngarmbatina",
+  "Ngbadingar",
+  "Ndjamen",
+  "Djerassem",
+  "Ngardou",
+  "Nodjimbadem",
+  "Beassem",
+  "Diguel",
+  "Koulamallah",
+  "Tchatchouang",
+  "Ngarlem",
+  "Djimet",
+  "Malloum"
+)
 
-sim_ll <- sim_ll |> 
-  mutate(full_name = paste0( ifelse(sex == "f", sample(female_names), sample(male_names)), " ", sample(surnames) ) ) |> 
+sim_ll <- sim_ll |>
+  mutate(
+    full_name = paste0(
+      ifelse(sex == "f", sample(female_names), sample(male_names)),
+      " ",
+      sample(surnames)
+    )
+  ) |>
   relocate(full_name, 1)
 
 ## Add age variables -------------------------------------------
@@ -137,11 +199,12 @@ sim_ll <- sim_ll |>
       .default = age
     ),
     age_unit = case_when(
-      age_group %in% c(
-        "< 6 months",
-        "6 - 8 months",
-        "9 - 11 months"
-      ) ~ "months",
+      age_group %in%
+        c(
+          "< 6 months",
+          "6 - 8 months",
+          "9 - 11 months"
+        ) ~ "months",
       .default = "years"
     ),
     age_group = fct_relevel(
@@ -156,32 +219,43 @@ sim_ll <- sim_ll |>
       )
     )
   ) |>
-  relocate(c(age, age_unit, age_group), .after = "sex") 
+  relocate(c(age, age_unit, age_group), .after = "sex")
 
 
 # Add hospitalisation data -----------------------------------------------
 
-sim_ll <- sim_ll |> 
+sim_ll <- sim_ll |>
   mutate(
     # variable about hospitalisation
-    hospitalisation = if_else(is.na(date_admission), sample(c(NA, "no"), size = nrow(sim_ll), replace = TRUE, prob = c(.05, .95)), "yes"),
+    hospitalisation = if_else(
+      is.na(date_admission),
+      sample(
+        c(NA, "no"),
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = c(.05, .95)
+      ),
+      "yes"
+    ),
     # hospitalisation = sample(c(NA, "yes"),
     #   size = nrow(sim_ll),
     #   replace = TRUE, prob = c(.05, .95)
-    # ), 
+    # ),
     date_consultation = case_when(
-      hospitalisation == "no" | is.na(hospitalisation) ~date_onset + sample(1:6, 1), 
+      hospitalisation == "no" | is.na(hospitalisation) ~ date_onset +
+        sample(1:6, 1),
       hospitalisation == "yes" ~ date_admission
-  )
-  ) |> 
-  relocate(hospitalisation, .before = date_admission) |> 
-  relocate(date_consultation, .before = hospitalisation) 
+    )
+  ) |>
+  relocate(hospitalisation, .before = date_admission) |>
+  relocate(date_consultation, .before = hospitalisation)
 
 sim_ll |> tabyl(hospitalisation)
 
 # Plots
-epivis::plot_pyramid(sim_ll, 
-  age_col = age_group, 
+epivis::plot_pyramid(
+  sim_ll,
+  age_col = age_group,
   make_age_groups = FALSE,
   gender_col = sex,
   gender_levels = c("f", "m")
@@ -252,8 +326,16 @@ sim_ll <- sim_ll |>
 
     # distribute a muac value
     muac = case_when(
-      muac_cat == "Green (125+ mm)" ~ sample(125:250, replace = TRUE, size = nrow(sim_ll)),
-      muac_cat == "Red (<115 mm)" ~ sample(60:114, replace = TRUE, size = nrow(sim_ll)),
+      muac_cat == "Green (125+ mm)" ~ sample(
+        125:250,
+        replace = TRUE,
+        size = nrow(sim_ll)
+      ),
+      muac_cat == "Red (<115 mm)" ~ sample(
+        60:114,
+        replace = TRUE,
+        size = nrow(sim_ll)
+      ),
       muac_cat == "Yellow (115 - 124 mm)" ~ sample(
         115:124,
         replace = TRUE,
@@ -272,41 +354,111 @@ max_date <- max(sim_ll$date_onset)
 sim_ll <- sim_ll |>
   mutate(
     vacc_status = case_when(
-      age_group == "< 6 months" ~ sample(vacc_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$vacc_prob, age_group == "< 6 months")$p),
-      age_group == "6 - 8 months" ~ sample(vacc_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$vacc_prob, age_group == "6 - 8 months")$p),
-      age_group == "9 - 11 months" ~ sample(vacc_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$vacc_prob, age_group == "9 - 11 months")$p),
-      age_group == "1 - 4 years" ~ sample(vacc_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$vacc_prob, age_group == "1 - 4 years")$p),
-      age_group == "5 - 14 years" ~ sample(vacc_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$vacc_prob, age_group == "5 - 14 years")$p),
-      age_group == "15+ years" ~ sample(vacc_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$vacc_prob, age_group == "15+ years")$p)
+      age_group == "< 6 months" ~ sample(
+        vacc_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(measles_params$vacc_prob, age_group == "< 6 months")$p
+      ),
+      age_group == "6 - 8 months" ~ sample(
+        vacc_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(measles_params$vacc_prob, age_group == "6 - 8 months")$p
+      ),
+      age_group == "9 - 11 months" ~ sample(
+        vacc_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(measles_params$vacc_prob, age_group == "9 - 11 months")$p
+      ),
+      age_group == "1 - 4 years" ~ sample(
+        vacc_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(measles_params$vacc_prob, age_group == "1 - 4 years")$p
+      ),
+      age_group == "5 - 14 years" ~ sample(
+        vacc_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(measles_params$vacc_prob, age_group == "5 - 14 years")$p
+      ),
+      age_group == "15+ years" ~ sample(
+        vacc_cat,
+        size = nrow(sim_ll),
+        replace = TRUE,
+        prob = filter(measles_params$vacc_prob, age_group == "15+ years")$p
+      )
     ),
     vacc_doses = if_else(
       vacc_status %in% c("Yes - card", "Yes - oral"),
       case_when(
-        age_group == "< 6 months" ~ sample(doses_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$doses_prob, age_group == "< 6 months")$p),
-        age_group == "6 - 8 months" ~ sample(doses_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$doses_prob, age_group == "6 - 8 months")$p),
-        age_group == "9 - 11 months" ~ sample(doses_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$doses_prob, age_group == "9 - 11 months")$p),
-        age_group == "1 - 4 years" ~ sample(doses_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$doses_prob, age_group == "1 - 4 years")$p),
-        age_group == "5 - 14 years" ~ sample(doses_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$doses_prob, age_group == "5 - 14 years")$p),
-        age_group == "15+ years" ~ sample(doses_cat, size = nrow(sim_ll), replace = TRUE, prob = filter(measles_params$doses_prob, age_group == "15+ years")$p)
+        age_group == "< 6 months" ~ sample(
+          doses_cat,
+          size = nrow(sim_ll),
+          replace = TRUE,
+          prob = filter(measles_params$doses_prob, age_group == "< 6 months")$p
+        ),
+        age_group == "6 - 8 months" ~ sample(
+          doses_cat,
+          size = nrow(sim_ll),
+          replace = TRUE,
+          prob = filter(
+            measles_params$doses_prob,
+            age_group == "6 - 8 months"
+          )$p
+        ),
+        age_group == "9 - 11 months" ~ sample(
+          doses_cat,
+          size = nrow(sim_ll),
+          replace = TRUE,
+          prob = filter(
+            measles_params$doses_prob,
+            age_group == "9 - 11 months"
+          )$p
+        ),
+        age_group == "1 - 4 years" ~ sample(
+          doses_cat,
+          size = nrow(sim_ll),
+          replace = TRUE,
+          prob = filter(measles_params$doses_prob, age_group == "1 - 4 years")$p
+        ),
+        age_group == "5 - 14 years" ~ sample(
+          doses_cat,
+          size = nrow(sim_ll),
+          replace = TRUE,
+          prob = filter(
+            measles_params$doses_prob,
+            age_group == "5 - 14 years"
+          )$p
+        ),
+        age_group == "15+ years" ~ sample(
+          doses_cat,
+          size = nrow(sim_ll),
+          replace = TRUE,
+          prob = filter(measles_params$doses_prob, age_group == "15+ years")$p
+        )
       ),
       NA
     )
-  ) 
+  )
 
 # Add birth date ---------------------------------------------------------
 # Calculate the birth_date column
-sim_ll <- sim_ll |> 
+sim_ll <- sim_ll |>
   mutate(
-date_birth = case_when(
-
-  age_unit == "years" ~ date_onset - years(age), 
-  age_unit == "months" ~ date_onset - months(age), 
-  .default = NA
-), 
-date_birth = case_when(
-  age_unit == "months" ~date_birth - sample(1:31, 1), 
-  age_unit == "years" ~date_birth - sample(1:365, 1))
-) |> relocate(date_birth, .after = age_group)
+    date_birth = case_when(
+      age_unit == "years" ~ date_onset - years(age),
+      age_unit == "months" ~ date_onset - months(age),
+      .default = NA
+    ),
+    date_birth = case_when(
+      age_unit == "months" ~ date_birth - sample(1:31, 1),
+      age_unit == "years" ~ date_birth - sample(1:365, 1)
+    )
+  ) |>
+  relocate(date_birth, .after = age_group)
 
 ## Improve outcome ------------------------------------------
 
@@ -335,16 +487,18 @@ date_birth = case_when(
 # recode everything as 1/0
 
 logit_death <- function(
-    reg_age_1,
-    reg_age_2,
-    reg_age_3,
-    reg_age_4,
-    reg_age_5,
-    reg_vacc,
-    reg_muac_2,
-    reg_muac_3,
-    error) {
-  logit <- reg_age_1 * 2.4 +
+  reg_age_1,
+  reg_age_2,
+  reg_age_3,
+  reg_age_4,
+  reg_age_5,
+  reg_vacc,
+  reg_muac_2,
+  reg_muac_3,
+  error
+) {
+  logit <- reg_age_1 *
+    2.4 +
     reg_age_2 * 2.1 +
     reg_age_3 * 2.1 +
     reg_age_4 * 1.38 +
@@ -436,8 +590,10 @@ prep_ll <- sim_ll |>
   )
 
 # fit the logistic regression
-mdl <- glm(outcome ~ fever + age_group + vacc_status + muac_cat,
-  data = prep_ll, family = "binomial"
+mdl <- glm(
+  outcome ~ fever + age_group + vacc_status + muac_cat,
+  data = prep_ll,
+  family = "binomial"
 )
 
 # view coeff
@@ -464,14 +620,16 @@ gtsummary::tbl_regression(
 
 # allocate hospital length
 sim_ll <- sim_ll |>
-  mutate(hosp_length = if_else(
-    hospitalisation == "yes",
-    round(digits = 0, rgamma(nrow(sim_ll),
-      shape = 2.2251860,
-      rate = 0.8541434
-    )),
-    NA
-  )) |>
+  mutate(
+    hosp_length = if_else(
+      hospitalisation == "yes",
+      round(
+        digits = 0,
+        rgamma(nrow(sim_ll), shape = 2.2251860, rate = 0.8541434)
+      ),
+      NA
+    )
+  ) |>
   # fix outcome and dates
   mutate(
     date_outcome = case_when(
@@ -481,23 +639,28 @@ sim_ll <- sim_ll |>
     )
   ) |>
   # add some variability to outcome
-  mutate(outcome = case_when(
-    outcome & hospitalisation == "yes" ~ sample(c("dead", "left against medical advice", NA),
-      size = nrow(sim_ll),
-      prob = c(.85, .02, .03),
-      replace = TRUE
-    ),
-    outcome & hospitalisation == "no" ~ sample(c("dead", NA),
-      size = nrow(sim_ll),
-      prob = c(.98, .02),
-      replace = TRUE
-    ),
-    !outcome ~ sample(c("recovered", "left against medical advice", NA),
-      size = nrow(sim_ll),
-      prob = c(.85, .02, .03),
-      replace = TRUE
+  mutate(
+    outcome = case_when(
+      outcome & hospitalisation == "yes" ~ sample(
+        c("dead", "left against medical advice", NA),
+        size = nrow(sim_ll),
+        prob = c(.85, .02, .03),
+        replace = TRUE
+      ),
+      outcome & hospitalisation == "no" ~ sample(
+        c("dead", NA),
+        size = nrow(sim_ll),
+        prob = c(.98, .02),
+        replace = TRUE
+      ),
+      !outcome ~ sample(
+        c("recovered", "left against medical advice", NA),
+        size = nrow(sim_ll),
+        prob = c(.85, .02, .03),
+        replace = TRUE
+      )
     )
-  )) |>
+  ) |>
   # create epi classification
   mutate(
     epi_classification = if_else(
@@ -516,8 +679,12 @@ sim_ll <- sim_ll |>
       )
     )
   ) |>
-  select(-c(
-    hosp_length, p_death  ))
+  select(
+    -c(
+      hosp_length,
+      p_death
+    )
+  )
 
 ## Add RDT Malaria  -----------------------------------------------------------
 
@@ -528,12 +695,14 @@ sim_ll <- sim_ll |>
 # say mean duration is 7 days (0.0192 year)
 # prev in moissala is 684*0.0192 = 13,13 per 1000, so 1.3%
 sim_ll <- sim_ll |>
-  mutate(malaria_rdt = sample(
-    c("positive", "negative", "inconclusive", NA),
-    replace = TRUE,
-    size = nrow(sim_ll),
-    prob = c(0.013, 0.737, 0.15, 0.1)
-  ))
+  mutate(
+    malaria_rdt = sample(
+      c("positive", "negative", "inconclusive", NA),
+      replace = TRUE,
+      size = nrow(sim_ll),
+      prob = c(0.013, 0.737, 0.15, 0.1)
+    )
+  )
 
 # Order and save --------------------------------------
 
